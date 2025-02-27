@@ -20,6 +20,7 @@ st.set_page_config(
 
 # 2.B # Custom CSS to override Streamlit styling
 st.markdown("""
+
 <style>
     /* Hide default elements */
     #MainMenu {visibility: hidden;}
@@ -34,30 +35,113 @@ st.markdown("""
         padding-right: 0.5rem;
     }
 
-    /* Make tabs look like the desktop app */
+    /* Base colors */
+    :root {
+        --primary-color: #0078D7;         /* Windows blue - primary accent color */
+        --primary-hover: #8BDC8B;         /* Light green - hover state */
+        --button-bg: #f5f5f5;             /* Light Gray - button background */
+        --button-border: #e0e0e0;         /* Light Gray - button border */
+        --text-primary: #333333;          /* Dark Gray - main text */
+        --disabled-bg: #f0f0f0;           /* Light Gray - disabled elements */
+        --disabled-text: #888888;         /* Medium Gray - disabled text */
+        --tab-active: #f0f0f0;            /* Active tab background */
+        --tab-inactive: #e0e0e0;          /* Inactive tab background */
+    }
+
+    /* Global button styling - consistent size and appearance */
+    button, 
+    .stButton > button,
+    .stDownloadButton > button,
+    div.stButton > button,
+    [data-testid="baseButton-secondary"] {
+        background-color: var(--button-bg) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--button-border) !important;
+        border-radius: 6px !important;
+        padding: 4px 12px !important;
+        font-size: 0.85rem !important;
+        font-weight: normal !important;
+        height: auto !important;
+        min-height: 30px !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.1) !important;
+        width: auto !important;
+        margin: 2px !important;
+    }
+
+    /* Hover state for all buttons - lighter green */
+    button:hover, 
+    .stButton > button:hover,
+    .stDownloadButton > button:hover,
+    div.stButton > button:hover,
+    [data-testid="baseButton-secondary"]:hover {
+        background-color: var(--primary-hover) !important;
+        color: var(--text-primary) !important;
+        border-color: var(--primary-hover) !important;
+        cursor: pointer !important;
+    }
+
+    /* Disabled button styling */
+    button:disabled,
+    div.stButton > button:disabled {
+        background-color: var(--disabled-bg) !important;
+        color: var(--disabled-text) !important;
+        cursor: not-allowed !important;
+        border: 1px solid var(--disabled-text) !important;
+        opacity: 0.7 !important;
+    }
+
+    /* Search and Clear button styling (more compact) */
+    .stButton > button {
+        padding: 3px 10px !important;
+        font-size: 0.8rem !important;
+        min-height: 26px !important;
+    }
+
+    /* Calculate button specific styling */
+    button[aria-label="Calculate"],
+    .calculate-button {
+        font-weight: bold !important;
+        background-color: #f8f8f8 !important;
+        border-color: var(--primary-color) !important;
+    }
+
+    /* Make tabs look like Windows desktop app */
     .stTabs [data-baseweb="tab-list"] {
         gap: 0px;
-        font-weight:bold;
     }
 
     .stTabs [data-baseweb="tab"] {
-        padding: 6px 36px;
-        font-weight:bold;
+        padding: 5px 24px !important;
+        font-weight: 500 !important;
         border: 1px solid #ddd;
         border-bottom: none;
         border-radius: 4px 4px 0 0;
+        font-size: 0.9rem !important;
+        background-color: var(--tab-inactive) !important;
+        color: var(--text-primary) !important;
     }
 
-    /* Change tabs highlight color from red to green */
+    /* Windows-style active tab */
     .stTabs [aria-selected="true"] {
-        background-color: white;
-        color: #2E8B57 !important;
-        font-weight: bold;
+        background-color: var(--tab-active) !important;
+        color: var(--text-primary) !important;
+        font-weight: bold !important;
+        border-bottom: 1px solid var(--tab-active) !important;
+        position: relative;
+        z-index: 1;
     }
 
-    /* Change underline of selected tab to green */
+    /* Remove colored underline for Windows-style tabs */
     .stTabs [aria-selected="true"]::before {
-        background-color: #2E8B57 !important;
+        display: none !important;
+    }
+
+    /* Remove tab indicator bar for Windows-style */
+    .stTabs [role="tablist"] [data-testid="stHorizontalBlock"] {
+        display: none !important;
     }
 
     /* Remove Streamlit's element margins */
@@ -66,255 +150,306 @@ st.markdown("""
         padding: 0 !important;
     }
 
-    /* Standard Button Styling - White with Black Text */
-    .grey-button, 
-    button[kind="primary"],
-    button[kind="secondary"],
-    div.stButton > button {
-        background-color: #E6EAE9 !important;
-        color: black !important;
-        border: 1px solid #D3DBD8 !important;
-        border-radius: 16px !important;
-        padding: 0px 20px !important;
-        cursor: pointer !important;
-        box-shadow: 4px 4px 5px rgba(0, 0, 0, 0.2) !important;
-        transition: all 0.3s ease !important;
-    }
-
-    /* Button Hover Effects - Green Background with White Text */
-    .grey-button:hover,
-    button[kind="primary"]:hover,
-    button[kind="secondary"]:hover,
-    div.stButton > button:hover {
-        background-color: #2E8B57 !important;
-        color: white !important;
-        border-color: #2E8B57 !important;
-    }
-
-    /* Primary Button Styling - White with Black Text */
-    div.stButton > button[data-baseweb="button"][kind="primary"] {
-        background-color: white !important;
-        color: black !important;
-        border: 1px solid #2E8B57 !important;
-    }
-
-    div.stButton > button[data-baseweb="button"][kind="primary"]:hover {
-        background-color: #2E8B57 !important;
-        color: white !important;
-        border-color: #2E8B57 !important;
-    }
-
-    /* Disabled button styling */
-    div.stButton > button:disabled {
-        background-color: #f0f0f0 !important;
-        color: #888 !important;
-        cursor: not-allowed !important;
-        border: 1px solid #ccc !important;
-    }
-
     /* Main title */
     .main-title {
         text-align: center;
         font-size: 24px;
-        font-family: Impact;
-        margin:2px 0;
+        font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        margin: 2px 0;
     }
 
-    /* Container for the whole application */
-    .app-container {
-        margin: 0 auto;
-        width: 100%;
-    }
-
-    /* Improved scrollbar styling - only change thickness */
-    [data-testid="stDataFrame"] div::-webkit-scrollbar {
-        height: 15px !important;
-    }
-
-    [data-testid="stDataFrame"] div::-webkit-scrollbar-thumb {
-        background: #888;
+    /* Panel styling */
+    [data-testid="stVerticalBlock"] > div > div[style*="flex"] > div > div[data-testid="stVerticalBlock"] {
+        border: 1px solid #e0e0e0;
         border-radius: 5px;
+        padding: 8px !important;
+        background-color: #fcfcfc;
+        margin-bottom: 10px;
     }
 
-    /* Success message styling inside form - change to green */
-    .success-message {
-        color: #2E8B57;
-        font-size: 14px;
-        font-weight: bold;
-        padding: 5px;
-        margin: 5px 0;
+    /* Panel headers - Windows style */
+    [data-testid="stVerticalBlock"] h3 {
+        font-size: 1rem !important;
+        margin-top: 0 !important;
+        margin-bottom: 5px !important;
+        color: var(--text-primary) !important;
         text-align: center;
+        font-weight: 600 !important;
+    }
+    
+    /* Search Panel and other panel styling to look like Windows */
+    div:has(> div:contains("Search Panel")),
+    div:has(> div:contains("Calculations Panel")) {
+        background-color: #f5f5f5 !important;
+        border: 1px solid #ddd !important;
+        border-radius: 3px !important;
+        margin-bottom: 10px !important;
+    }
+    
+    /* Panel title styling */
+    div:contains("Search Panel"),
+    div:contains("Calculations Panel") {
+        font-weight: 600 !important;
+        color: var(--text-primary) !important;
+        background-color: var(--tab-active) !important;
+        padding: 5px 10px !important;
+        border-bottom: 1px solid #ddd !important;
     }
 
-    /* Error message styling inside form */
-    .error-message {
-        color: red;
-        font-size: 14px;
-        font-weight: bold;
-        padding: 5px;
-        margin: 5px 0;
-        text-align: center;
+    /* Form input styling */
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stSelectbox > div > div > div,
+    .stDateInput > div > div > input {
+        padding: 0.25rem 0.4rem !important;
+        height: 28px !important;
+        font-size: 0.85rem !important;
+        border-radius: 4px !important;
     }
 
-    /* Adjust form button width/positioning for compact layout */
-    div.stButton > button.stFormSubmitter {
-        width: 100%;
-        padding: 0.375rem 0.5rem;
-        font-size: 0.9rem;
+    /* Make input labels smaller */
+    .stTextInput label,
+    .stNumberInput label,
+    .stSelectbox label,
+    .stDateInput label {
+        font-size: 0.85rem !important;
+        margin-bottom: 2px !important;
+        font-weight: 500 !important;
     }
 
-    /* Ensure the dropdown menus are smaller and match other elements */
-    .stSelectbox > div > div {
-        min-height: 16px !important;
-    }
-
-    /* Make date picker more compact */
-    .stDateInput > div > div {
-        min-height: 16px !important;
-    }
-
-    /* Make number input elements more compact */
+    /* Adjustable inputs */
     .stNumberInput > div {
         flex-direction: row;
         align-items: center;
     }
 
-    /* Adjust the input elements themselves */
-    .stTextInput > div > div > input,
-    .stNumberInput > div > div > input,
-    .stSelectbox > div > div > div,
-    .stDateInput > div > div > input {
-        padding: 0.25rem 0.5rem !important;
-        height: 30px !important;
-        font-size: 0.9rem !important;
-    }
-
-    /* Reduce padding for form layout */
-    div.stForm > div {
+    /* Number input stepper buttons */
+    .stNumberInput [data-baseweb="spinner"] button {
+        background-color: #fafafa !important;
+        color: var(--text-primary) !important;
+        border: 1px solid #e6e6e6 !important;
+        min-width: 24px !important;
+        width: 24px !important;
+        height: 14px !important;
         padding: 0 !important;
     }
 
-    /* Make form components tighter */
-    div.stForm [data-testid="column"] {
-        padding-left: 0.25rem !important;
-        padding-right: 0.25rem !important;
+    .stNumberInput [data-baseweb="spinner"] button:hover {
+        background-color: var(--primary-hover) !important;
+        color: var(--text-primary) !important;
     }
 
-    /* Ensure calculation panel labels don't wrap */
+    .stNumberInput button svg {
+        fill: var(--primary-color) !important;
+        width: 10px !important;
+        height: 10px !important;
+    }
+
+    .stNumberInput button:hover svg {
+        fill: var(--text-primary) !important;
+    }
+    
+    /* Ensure the Search and Clear Filters buttons are properly displayed */
+    .search-row {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        gap: 10px !important;
+        margin-top: 5px !important;
+    }
+
+    /* Change focus color for all controls to Windows blue */
+    input:focus, 
+    .stSelectbox [data-baseweb="select"] > div:focus,
+    .stDateInput input:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 1px var(--primary-color) !important;
+    }
+    
+    /* Move Clear Filters button to be in the same row as Search button */
+    /* First hide the original button container */
+    [data-testid="stHorizontalBlock"] > div:has(button:contains("Clear Filters")) {
+        display: none !important;
+    }
+    
+    /* Then create a copy that appears next to the Search button */
+    [data-testid="stHorizontalBlock"] > div:has(button:contains("Search")):after {
+        content: "";
+        display: inline-block;
+        width: 10px;
+    }
+    
+    /* Custom CSS to position buttons side by side */
+    .search-filter-row {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: flex-end !important;
+        gap: 10px !important;
+        margin-top: 10px !important;
+    }
+    
+    /* Target search panel to rearrange search and clear buttons */
+    div[data-testid="stVerticalBlock"]:has(div:contains("Search Panel")) {
+        position: relative !important;
+    }
+    
+    /* Force the Clear Filters button to appear next to Search button */
+    button:contains("Clear Filters") {
+        position: absolute !important;
+        right: 100px !important;
+        top: 228px !important; /* Adjust this value to align with the Search button */
+    }
+
+    /* Dropdown/select styling */
+    .stSelectbox > div > div {
+        min-height: 28px !important;
+    }
+
+    .stSelectbox [data-baseweb="select"] {
+        font-size: 0.85rem !important;
+    }
+
+    /* Date picker more compact */
+    .stDateInput > div > div {
+        min-height: 28px !important;
+    }
+
+    /* Improved scrollbar styling */
+    [data-testid="stDataFrame"] div::-webkit-scrollbar {
+        height: 10px !important;
+        width: 10px !important;
+    }
+
+    [data-testid="stDataFrame"] div::-webkit-scrollbar-thumb {
+        background: #aaa;
+        border-radius: 5px;
+    }
+
+    [data-testid="stDataFrame"] div::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    /* Dataframe styling */
+    [data-testid="stDataFrame"] {
+        font-size: 0.85rem !important;
+    }
+
+    [data-testid="stDataFrame"] [role="cell"]:focus {
+        outline-color: var(--primary-color) !important;
+    }
+
+    /* Table headers */
+    [data-testid="stDataFrame"] th {
+        background-color: #f0f0f0 !important;
+        font-weight: 600 !important;
+        color: var(--text-primary) !important;
+        text-align: center !important;
+        padding: 4px 6px !important;
+    }
+
+    /* Table cells */
+    [data-testid="stDataFrame"] td {
+        padding: 3px 6px !important;
+    }
+
+    /* Form button styling */
+    div.stForm > div > div > div > div > button {
+        width: 100% !important;
+        background-color: var(--button-bg) !important;
+        color: var(--text-primary) !important;
+    }
+    
+    /* Success message styling - Windows style */
+    .success-message {
+        color: #107C10; /* Windows success green */
+        font-size: 14px;
+        font-weight: bold;
+        padding: 4px;
+        margin: 4px 0;
+        text-align: center;
+    }
+    
+    /* Additional styles to force Clear Filters button next to Search */
+    /* This creates a direct CSS solution that works with Streamlit's structure */
+    div.element-container:has(button:contains("Search")) {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: flex-end !important;
+        gap: 10px !important;
+    }
+    
+    /* Search button positioning */
+    button:contains("Search") {
+        margin-right: 5px !important;
+    }
+
+    /* Error message styling */
+    .error-message {
+        color: #d32f2f;
+        font-size: 14px;
+        font-weight: bold;
+        padding: 4px;
+        margin: 4px 0;
+        text-align: center;
+    }
+    
+    /* Calculation panel labels */
     .calculation-label {
         font-size: 0.85rem !important;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
-
-    /* Change focus color for all controls from red to green */
-    input:focus, 
-    .stSelectbox [data-baseweb="select"] > div:focus,
-    .stDateInput input:focus {
-        border-color: #2E8B57 !important;
-        box-shadow: 0 0 0 1px #2E8B57 !important;
-    }
-
-    /* Style the number input stepper buttons to use green */
-    .stNumberInput button svg {
-        fill: #2E8B57 !important;
-    }
-
-    /* Override the number input increase/decrease buttons - replace red with green */
-    .stNumberInput [data-baseweb="spinner"] button {
-        background-color: white !important;
-        color: black !important;
-        border: 1px solid #2E8B57 !important;
-    }
-
-    .stNumberInput [data-baseweb="spinner"] button:hover {
-        background-color: #2E8B57 !important;
-        color: white !important;
-        border-color: #2E8B57 !important;
-    }
-
-    /* Fix the specific plus button */
-    .stNumberInput button[aria-label="Increase"] {
-        background-color: white !important;
-        color: black !important;
-        border: 1px solid #2E8B57 !important;
-        border-radius: 0px;
-    }
-
-    .stNumberInput button[aria-label="Increase"]:hover {
-        background-color: #2E8B57 !important;
-        color: white !important;
-        border-color: #2E8B57 !important;
-    }
-
-    /* Fix the minus button */
-    .stNumberInput button[aria-label="Decrease"] {
-        background-color: white !important;
-        color: black !important;
-        border: 1px solid #2E8B57 !important;
-    }
-
-    .stNumberInput button[aria-label="Decrease"]:hover {
-        background-color: #2E8B57 !important;
-        color: white !important;
-        border-color: #2E8B57 !important;
-    }
-
-    /* Change success notification color */
-    [data-testid="stNotification"] {
-        background-color: #f0f8f0 !important;
-        border-color: #2E8B57 !important;
-    }
-
-    /* Data editor styling for job descriptions tab */
+    
+    /* Data editor styling */
     [data-testid="stDataEditor"] {
         border: 1px solid #ddd;
         border-radius: 5px;
         background-color: #f8f8f8;
         margin-bottom: 10px;
+        font-size: 0.85rem !important;
+    }
+    
+    /* Change notification styles */
+    [data-testid="stNotification"] {
+        background-color: #f0f8f0 !important;
+        border-color: var(--primary-color) !important;
+        border-radius: 4px !important;
+        padding: 8px !important;
+    }
+    
+    /* Compact layout for panels */
+    div.stForm [data-testid="column"] {
+        padding-left: 0.25rem !important;
+        padding-right: 0.25rem !important;
+    }
+    
+    /* Ensure calculation panel controls are properly aligned and sized */
+    .calculation-panel [data-testid="stHorizontalBlock"] {
+        gap: 2px !important;
+        align-items: center !important;
+    }
+    
+    .calculation-panel [data-testid="stHorizontalBlock"] > div {
+        min-width: 0 !important;
     }
 
-    /* Dataframe styling - change selection color */
-    [data-testid="stDataFrame"] [role="cell"]:focus {
-        outline-color: #2E8B57 !important;
+    /* Reduce column gaps in tables */
+    [data-testid="stDataFrame"] table {
+        border-collapse: collapse !important;
     }
-
-    /* Target the tab indicator bar */
-    .stTabs [role="tablist"] [data-testid="stHorizontalBlock"] {
-        background-color: #2E8B57 !important;
+    
+    [data-testid="stDataFrame"] table th,
+    [data-testid="stDataFrame"] table td {
+        border: 1px solid #ddd !important;
     }
-
-    /* Bottom action buttons */
-    [data-testid="baseButton-secondary"] {
-        background-color: white !important;
-        color: black !important;
-        border: 1px solid #2E8B57 !important;
-        border-radius: 8px !important;
-        transition: all 0.3s ease !important;
-    }
-
-    [data-testid="baseButton-secondary"]:hover {
-        background-color: #2E8B57 !important;
-        color: white !important;
-    }
-
-    /* Ensure all buttons have consistent styling */
-    button, 
-    .stButton > button,
-    .stDownloadButton > button {
-        border-radius: 8px !important;
-        background-color: #f5f5f5 !important;
-        color: black !important;
-        border: 1px solid #f8f8f8 !important;
-    }
-
-    button:hover, 
-    .stButton > button:hover,
-    .stDownloadButton > button:hover {
-        background-color: #2BA903 !important;
-        color: white !important;
-        border-color: #30C103 !important;
+    
+    /* Make app container width consistent */
+    .app-container {
+        margin: 0 auto;
+        width: 100%;
+        max-width: 1200px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -729,6 +864,15 @@ with tab1:
 
     else:
         st.info("No benchmark data available. Please upload a file.")
+# Define a callback function to reset job search filters
+def reset_job_filters():
+    """Callback function to reset job search filters"""
+    if 'job_code_search' in st.session_state:
+        st.session_state.job_code_search = ""
+    if 'job_title_search' in st.session_state:
+        st.session_state.job_title_search = ""
+    if 'job_family_search' in st.session_state:
+        st.session_state.job_family_search = ""
 
 
 # 6 # Job Descriptions Tab
@@ -736,17 +880,6 @@ with tab1:
 
 # Job Descriptions Tab
 with tab2:
-    # Helper function to reset job search filters
-    def reset_job_search_filters():
-        """Helper function to reset job search filters"""
-        if 'job_code_search' in st.session_state:
-            st.session_state.job_code_search = ""
-        if 'job_title_search' in st.session_state:
-            st.session_state.job_title_search = ""
-        if 'job_family_search' in st.session_state:
-            st.session_state.job_family_search = ""
-
-
     # Initialize session state for job descriptions if not already done
     if 'edited_jobs' not in st.session_state:
         st.session_state.edited_jobs = {}
@@ -754,15 +887,8 @@ with tab2:
         st.session_state.editing_in_progress = False
     if 'save_in_progress' not in st.session_state:
         st.session_state.save_in_progress = False
-    if 'clear_job_filters_clicked' not in st.session_state:
-        st.session_state.clear_job_filters_clicked = False
     if 'save_success_message' not in st.session_state:
         st.session_state.save_success_message = ""
-
-    # Check if we need to handle a previous clear filters request
-    if st.session_state.get('clear_job_filters_clicked', False):
-        reset_job_search_filters()
-        st.session_state.clear_job_filters_clicked = False
 
     # Search Panel form for Job Descriptions
     with st.form(key="job_search_form"):
@@ -789,18 +915,10 @@ with tab2:
             st.markdown('<div style="padding-top:2px;">&nbsp;</div>', unsafe_allow_html=True)
             search_jobs = st.form_submit_button("Search")
 
-        # Clear button
+        # Clear button with callback
         col1, col2 = st.columns([1, 1])
         with col1:
-            clear_job_filters = st.form_submit_button("Clear Filters")
-
-    # Handle clear filters button click
-    if clear_job_filters:
-        st.session_state.clear_job_filters_clicked = True
-        try:
-            st.experimental_rerun()
-        except:
-            st.warning("Please refresh the page to clear filters.")
+            clear_job_filters = st.form_submit_button("Clear Filters", on_click=reset_job_filters)
 
     # Display status message if it exists
     if st.session_state.save_success_message:
@@ -818,7 +936,7 @@ with tab2:
             # Create a display dataframe with only the columns we need
             display_df = st.session_state.benchmark_data[job_desc_columns].copy()
 
-            # Apply filters
+            # Apply filters if they exist
             if job_code_search:
                 display_df = display_df[
                     display_df["Job Code"].astype(str).str.contains(job_code_search, case=False, na=False)
@@ -954,72 +1072,3 @@ with tab2:
     else:
         st.info("No benchmark data available. Please upload a file.")
 
-    # File uploader
-    if 'show_job_upload' not in st.session_state:
-        st.session_state.show_job_upload = False
-
-    if st.session_state.show_job_upload:
-        with st.container():
-            job_desc_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"],
-                                             key="job_desc_uploader")
-
-            if job_desc_file is not None:
-                try:
-                    if job_desc_file.name.endswith('.csv'):
-                        uploaded_data = pd.read_csv(job_desc_file)
-                    else:
-                        uploaded_data = pd.read_excel(job_desc_file)
-
-                    # Check if the uploaded file has the required columns
-                    required_cols = ["Job Code", "Job Title", "Job Family", "Job Description"]
-                    if all(col in uploaded_data.columns for col in required_cols):
-                        # Create a copy of the current benchmark data
-                        updated_df = st.session_state.benchmark_data.copy()
-
-                        # Update only the Job Family and Job Description columns from uploaded data
-                        for index, row in uploaded_data.iterrows():
-                            job_code = row["Job Code"]
-
-                            # Find if this Job Code already exists in benchmark_data
-                            match_idx = updated_df.index[updated_df["Job Code"] == job_code].tolist()
-
-                            if match_idx:
-                                # Update existing row - only Job Family and Job Description
-                                updated_df.loc[match_idx[0], "Job Family"] = row["Job Family"]
-                                updated_df.loc[match_idx[0], "Job Description"] = row["Job Description"]
-                            else:
-                                # This is a new job code, we need to add it to benchmark_data with minimal info
-                                new_row = pd.DataFrame({
-                                    "Job Code": [job_code],
-                                    "Job Title": [row["Job Title"]],
-                                    "Job Family": [row["Job Family"]],
-                                    "Job Description": [row["Job Description"]]
-                                })
-
-                                # Add other required columns with empty/default values
-                                for col in updated_df.columns:
-                                    if col not in new_row.columns:
-                                        new_row[col] = None
-
-                                # Append to updated_df
-                                updated_df = pd.concat([updated_df, new_row], ignore_index=True)
-
-                        # Update session state with the modified data
-                        st.session_state.benchmark_data = updated_df
-
-                        # Save to Google Sheets
-                        if save_data_to_google_sheet(updated_df):
-                            st.session_state.save_success_message = "File uploaded and saved successfully!"
-                        else:
-                            st.error("Failed to save data to Google Sheets")
-
-                        st.session_state.show_job_upload = False
-                        try:
-                            st.experimental_rerun()
-                        except:
-                            st.success("Data uploaded successfully. Please refresh the page to see changes.")
-                    else:
-                        st.error(
-                            f"Uploaded file missing required columns: {', '.join([col for col in required_cols if col not in uploaded_data.columns])}")
-                except Exception as e:
-                    st.error(f"Error loading file: {e}")
