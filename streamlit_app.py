@@ -496,6 +496,7 @@ st.markdown('<div class="main-title">Salary Survey Tool</div>', unsafe_allow_htm
 tab1, tab2 = st.tabs(["Benchmark Data", "Job Descriptions"])
 
 # 5 # Benchmark Data Tab
+# 5 # Benchmark Data Tab
 with tab1:
     col1, col2 = st.columns(2)
 
@@ -574,30 +575,30 @@ with tab1:
             # Security Clearance in first column - smaller font label
             with sec_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Security Clearance (%):</div>',
-                            unsafe_allow_html=True)
+                           unsafe_allow_html=True)
                 security_clearance = st.number_input("", min_value=0.0, max_value=100.0, step=0.1, format="%.1f",
-                                                     label_visibility="collapsed", key="security_clearance")
+                                                    label_visibility="collapsed", key="security_clearance")
 
             # Skills Adjustment in second column - smaller font label
             with skills_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Skills Adjustment (%):</div>',
-                            unsafe_allow_html=True)
+                           unsafe_allow_html=True)
                 skills_adjustment = st.number_input("", min_value=0.0, max_value=100.0, step=0.1, format="%.1f",
-                                                    label_visibility="collapsed", key="skills_adjustment")
+                                                   label_visibility="collapsed", key="skills_adjustment")
 
             # Geo Differential in third column - smaller font label
             with geo_diff_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Geo Differential (%):</div>',
-                            unsafe_allow_html=True)
+                           unsafe_allow_html=True)
                 geo_differential = st.number_input("", min_value=0.0, max_value=100.0, step=0.1, format="%.1f",
-                                                   label_visibility="collapsed", key="geo_differential")
+                                                  label_visibility="collapsed", key="geo_differential")
 
             # Effective Date in fourth column - smaller font label
             with date_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Effective Date:</div>',
-                            unsafe_allow_html=True)
+                           unsafe_allow_html=True)
                 effective_date = st.date_input("", datetime.datetime.now(), label_visibility="collapsed",
-                                               key="effective_date")
+                                              key="effective_date")
 
             # Calculate button in fifth column
             with calc_col:
@@ -606,12 +607,17 @@ with tab1:
 
     # Handle clear filters button click
     if clear_filters:
-        # Set a flag to clear filters on next rerun
-        st.session_state.clear_filters_clicked = True
+        # Directly clear the filter values
+        st.session_state.job_title_filter = ""
+        st.session_state.industry_filter = ""
+        st.session_state.geo_region_filter = ""
         # Clear calculation status
         st.session_state.calc_success = False
         st.session_state.calc_error = ""
-        st.rerun()
+        try:
+            st.experimental_rerun()
+        except:
+            st.warning("Please refresh the page to see the cleared filters.")
 
     # Initialize session state variables for export
     if 'display_download_link' not in st.session_state:
@@ -697,7 +703,10 @@ with tab1:
                     st.session_state.display_download_link = True
 
                     # Force rerun to display the download link
-                    st.rerun()
+                    try:
+                        st.experimental_rerun()
+                    except:
+                        st.success("Please refresh the page to download your data.")
 
         # Display download link if export was requested
         if st.session_state.display_download_link:
@@ -709,7 +718,10 @@ with tab1:
             # Add a button to clear the download link
             if st.button("Clear Download"):
                 st.session_state.display_download_link = False
-                st.rerun()
+                try:
+                    st.experimental_rerun()
+                except:
+                    st.warning("Please refresh the page to clear the download link.")
 
         with col3:
             upload_button = st.button("Upload Data")
@@ -726,7 +738,7 @@ with tab1:
     if st.session_state.show_upload:
         with st.container():
             uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"],
-                                             key="benchmark_uploader")
+                                            key="benchmark_uploader")
 
             if uploaded_file is not None:
                 try:
@@ -745,10 +757,15 @@ with tab1:
                         st.error("Failed to save data to Google Sheets")
 
                     st.session_state.show_upload = False
-                    st.rerun()
+                    try:
+                        st.experimental_rerun()
+                    except:
+                        st.success("Data uploaded successfully. Please refresh the page to see changes.")
                 except Exception as e:
                     st.error(f"Error loading file: {e}")
-# Job Descriptions Tab
+
+
+# 6 # Job Descriptions Tab
 # Job Descriptions Tab
 with tab2:
     # Helper function to reset job search filters
