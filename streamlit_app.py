@@ -451,6 +451,28 @@ st.markdown("""
         width: 100%;
         max-width: 1200px;
     }
+       /* Spinner for saving indicator */
+    .spinner {
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top-color: #3498db;
+        animation: spin 1s ease-in-out infinite;
+        display: inline-block;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Success message styling */
+    .success-message {
+        color: #28a745;
+        font-weight: 500;
+        padding: 5px 0;
+    }
+    
 </style>
 """, unsafe_allow_html=True)
 
@@ -607,6 +629,9 @@ if 'benchmark_data' not in st.session_state:
     except Exception as e:
         st.session_state.benchmark_data = pd.DataFrame()
         st.error(f"Error loading benchmark data: {e}")
+
+if 'last_successful_save' not in st.session_state:
+    st.session_state.last_successful_save = False
 
 # Initialize calculation status in session state
 if 'calc_success' not in st.session_state:
@@ -876,9 +901,7 @@ def reset_job_filters():
 
 
 # 6 # Job Descriptions Tab
-# Job Descriptions Tab
 
-# Job Descriptions Tab
 with tab2:
     # Initialize session state for job descriptions if not already done
     if 'edited_jobs' not in st.session_state:
@@ -889,6 +912,12 @@ with tab2:
         st.session_state.save_in_progress = False
     if 'save_success_message' not in st.session_state:
         st.session_state.save_success_message = ""
+
+    # Display success message if a save was just completed
+    if st.session_state.last_successful_save:
+        st.success("Job descriptions updated successfully!")
+        # Reset the flag after displaying
+        st.session_state.last_successful_save = False
 
     # Search Panel form for Job Descriptions
     with st.form(key="job_search_form"):
@@ -920,12 +949,6 @@ with tab2:
         with col1:
             clear_job_filters = st.form_submit_button("Clear Filters", on_click=reset_job_filters)
 
-    # Display status message if it exists
-    if st.session_state.save_success_message:
-        st.success(st.session_state.save_success_message)
-        # Clear the message after displaying once
-        st.session_state.save_success_message = ""
-
     # Filter job descriptions from benchmark data
     if not st.session_state.benchmark_data.empty:
         # Extract just the job description columns we need
@@ -954,6 +977,11 @@ with tab2:
             display_df['Job Family'] = display_df['Job Family'].astype(str)
             display_df['Job Description'] = display_df['Job Description'].astype(str)
 
+            # Create a unique key for the data editor to force it to reset after saving
+            editor_key = f"job_descriptions_data_editor_{id(st.session_state.benchmark_data)}"
+            if st.session_state.last_successful_save:
+                editor_key = f"job_descriptions_data_editor_after_save_{datetime.datetime.now().timestamp()}"
+
             # Display filtered data with editable cells
             edited_df = st.data_editor(
                 display_df,
@@ -967,7 +995,7 @@ with tab2:
                     "Job Description": st.column_config.TextColumn("Job Description", width="large")
                 },
                 hide_index=True,
-                key="job_descriptions_data_editor"
+                key=editor_key
             )
 
             # Check for changes between the original and edited dataframes
@@ -1005,70 +1033,62 @@ with tab2:
 
             with job_col3:
                 # Save Changes button - only enabled if there are changes to save
-                if st.session_state.editing_in_progress and not st.session_state.save_in_progress:
-                    save_button = st.button("Save Changes", type="primary")
+                if st.session_state.editing_in_progress:
+                    save_button = st.button("Save Changes", type="primary", key="save_changes_button")
                     if save_button:
-                        # Set save in progress flag
-                        st.session_state.save_in_progress = True
+                        with st.spinner("Saving changes..."):
+                            try:
+                                # Get the original benchmark data
+                                original_df = st.session_state.benchmark_data.copy()
+                                changes_made = False
 
-                        try:
-                            # Get the original benchmark data
-                            original_df = st.session_state.benchmark_data.copy()
-                            changes_made = False
+                                # Apply each edit to the relevant rows in the original dataframe
+                                for job_code, changes in st.session_state.edited_jobs.items():
+                                    # Find the row with this job code
+                                    row_indices = original_df.index[original_df["Job Code"] == job_code].tolist()
 
-                            # Apply each edit to the relevant rows in the original dataframe
-                            for job_code, changes in st.session_state.edited_jobs.items():
-                                # Find the row with this job code
-                                row_indices = original_df.index[original_df["Job Code"] == job_code].tolist()
+                                    if row_indices:
+                                        row_idx = row_indices[0]
+                                        # Update only the Job Family and Job Description columns if they were changed
+                                        if "Job Family" in changes:
+                                            original_df.loc[row_idx, "Job Family"] = changes["Job Family"]
+                                            changes_made = True
 
-                                if row_indices:
-                                    row_idx = row_indices[0]
-                                    # Update only the Job Family and Job Description columns if they were changed
-                                    if "Job Family" in changes:
-                                        original_df.loc[row_idx, "Job Family"] = changes["Job Family"]
-                                        changes_made = True
+                                        if "Job Description" in changes:
+                                            original_df.loc[row_idx, "Job Description"] = changes["Job Description"]
+                                            changes_made = True
 
-                                    if "Job Description" in changes:
-                                        original_df.loc[row_idx, "Job Description"] = changes["Job Description"]
-                                        changes_made = True
+                                if changes_made:
+                                    # Save the updated dataframe back to session state
+                                    st.session_state.benchmark_data = original_df
 
-                            if changes_made:
-                                # Save the updated dataframe back to session state
-                                st.session_state.benchmark_data = original_df
+                                    # Save to Google Sheets
+                                    save_success = save_data_to_google_sheet(original_df)
 
-                                # Save to Google Sheets
-                                save_success = save_data_to_google_sheet(original_df)
-
-                                if save_success:
-                                    # Set success message to be displayed after rerun
-                                    st.session_state.save_success_message = "Job descriptions updated successfully!"
-                                    # Reset editing flags
+                                    if save_success:
+                                        # Clear edit tracking
+                                        st.session_state.edited_jobs = {}
+                                        st.session_state.editing_in_progress = False
+                                        # Set success flag for next render
+                                        st.session_state.last_successful_save = True
+                                        # Force rerun to refresh UI
+                                        st.rerun()
+                                    else:
+                                        st.error("Failed to save to Google Sheets. Please try again.")
+                                else:
+                                    st.info("No changes were detected to save.")
+                                    # Clear edit tracking
                                     st.session_state.edited_jobs = {}
                                     st.session_state.editing_in_progress = False
-                                else:
-                                    st.error("Failed to save to Google Sheets. Please try again.")
-                            else:
-                                st.info("No changes were detected to save.")
-                                st.session_state.edited_jobs = {}
-                                st.session_state.editing_in_progress = False
+                                    st.rerun()
 
-                        except Exception as e:
-                            st.error(f"Error during save operation: {str(e)}")
-
-                        # Reset save in progress flag
-                        st.session_state.save_in_progress = False
-
+                            except Exception as e:
+                                st.error(f"Error during save operation: {str(e)}")
                 else:
-                    # Disabled save button when no changes or operation in progress
-                    save_disabled = not st.session_state.editing_in_progress or st.session_state.save_in_progress
-                    st.button("Save Changes", disabled=save_disabled)
-
-                    # Show save in progress message
-                    if st.session_state.save_in_progress:
-                        st.info("Save operation in progress...")
+                    # Disabled save button when no changes
+                    st.button("Save Changes", disabled=True, key="save_disabled_button")
         else:
             missing_cols = [col for col in job_desc_columns if col not in st.session_state.benchmark_data.columns]
             st.error(f"Missing required columns in benchmark data: {', '.join(missing_cols)}")
     else:
         st.info("No benchmark data available. Please upload a file.")
-
