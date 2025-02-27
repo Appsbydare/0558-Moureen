@@ -19,7 +19,6 @@ st.set_page_config(
 )
 
 # 2.B # Custom CSS to override Streamlit styling
-# 2.B # Custom CSS to override Streamlit styling
 st.markdown("""
 <style>
     /* Hide default elements */
@@ -27,29 +26,23 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* Enforce consistent styling across environments */
-    * {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !important;
-    }
-
     /* Minimize padding */
     .block-container {
-        padding-top: 0.5rem !important;
-        padding-bottom: 0rem !important;
-        padding-left: 0.5rem !important;
-        padding-right: 0.5rem !important;
-        max-width: 100% !important;
+        padding-top: 0.5rem;
+        padding-bottom: 0rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
     }
 
     /* Make tabs look like the desktop app */
     .stTabs [data-baseweb="tab-list"] {
         gap: 0px;
-        font-weight: bold;
+        font-weight:bold;
     }
 
     .stTabs [data-baseweb="tab"] {
-        padding: 6px 36px !important;
-        font-weight: bold;
+        padding: 6px 36px;
+        font-weight:bold;
         border: 1px solid #ddd;
         border-bottom: none;
         border-radius: 4px 4px 0 0;
@@ -77,55 +70,25 @@ st.markdown("""
     .grey-button, 
     button[kind="primary"],
     button[kind="secondary"],
-    div.stButton > button,
-    button.stFormSubmitter {
+    div.stButton > button {
         background-color: #E6EAE9 !important;
         color: black !important;
         border: 1px solid #D3DBD8 !important;
         border-radius: 16px !important;
-        padding: 4px 20px !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        line-height: 1.2 !important;
-        font-size: 14px !important;
+        padding: 0px 20px !important;
         cursor: pointer !important;
-        box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 4px 4px 5px rgba(0, 0, 0, 0.2) !important;
         transition: all 0.3s ease !important;
-        text-align: center !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: auto !important;
     }
 
     /* Button Hover Effects - Green Background with White Text */
     .grey-button:hover,
     button[kind="primary"]:hover,
     button[kind="secondary"]:hover,
-    div.stButton > button:hover,
-    button.stFormSubmitter:hover {
+    div.stButton > button:hover {
         background-color: #2E8B57 !important;
         color: white !important;
         border-color: #2E8B57 !important;
-    }
-
-    /* Fix button width issues */
-    div.stButton {
-        width: auto !important;
-        display: inline-block !important;
-    }
-
-    /* Ensure consistent button sizing in forms */
-    div.stForm div.stButton {
-        width: 100% !important;
-    }
-
-    /* Fix for search/form buttons */
-    button.stFormSubmitter {
-        width: 100% !important;
-        height: 36px !important;
-        padding: 2px 10px !important;
     }
 
     /* Primary Button Styling - White with Black Text */
@@ -142,13 +105,11 @@ st.markdown("""
     }
 
     /* Disabled button styling */
-    div.stButton > button:disabled,
-    button.stFormSubmitter:disabled {
+    div.stButton > button:disabled {
         background-color: #f0f0f0 !important;
         color: #888 !important;
         cursor: not-allowed !important;
         border: 1px solid #ccc !important;
-        opacity: 0.7 !important;
     }
 
     /* Main title */
@@ -156,32 +117,13 @@ st.markdown("""
         text-align: center;
         font-size: 24px;
         font-family: Impact;
-        margin: 2px 0;
+        margin:2px 0;
     }
 
     /* Container for the whole application */
     .app-container {
         margin: 0 auto;
         width: 100%;
-    }
-
-    /* Form panel styling */
-    .stForm {
-        background-color: #f9f9f9;
-        border-radius: 8px;
-        padding: 10px !important;
-        margin-bottom: 15px !important;
-    }
-
-    /* Panel headers */
-    .panel-header {
-        text-align: center;
-        font-weight: bold;
-        background-color: #f5f5f5;
-        padding: 5px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        margin-bottom: 8px;
     }
 
     /* Improved scrollbar styling - only change thickness */
@@ -212,6 +154,13 @@ st.markdown("""
         padding: 5px;
         margin: 5px 0;
         text-align: center;
+    }
+
+    /* Adjust form button width/positioning for compact layout */
+    div.stButton > button.stFormSubmitter {
+        width: 100%;
+        padding: 0.375rem 0.5rem;
+        font-size: 0.9rem;
     }
 
     /* Ensure the dropdown menus are smaller and match other elements */
@@ -251,23 +200,6 @@ st.markdown("""
         padding-right: 0.25rem !important;
     }
 
-    /* Ensure form elements align properly */
-    .stForm [data-testid="column"] {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-    }
-
-    /* Keep form elements consistent height */
-    .stForm .stTextInput, 
-    .stForm .stSelectbox, 
-    .stForm .stNumberInput,
-    .stForm .stDateInput,
-    .stForm .stButton {
-        height: 36px !important;
-        min-height: 36px !important;
-    }
-
     /* Ensure calculation panel labels don't wrap */
     .calculation-label {
         font-size: 0.85rem !important;
@@ -294,10 +226,6 @@ st.markdown("""
         background-color: white !important;
         color: black !important;
         border: 1px solid #2E8B57 !important;
-        height: 15px !important;
-        width: 25px !important;
-        min-width: 25px !important;
-        padding: 0 !important;
     }
 
     .stNumberInput [data-baseweb="spinner"] button:hover {
@@ -364,7 +292,6 @@ st.markdown("""
         border: 1px solid #2E8B57 !important;
         border-radius: 8px !important;
         transition: all 0.3s ease !important;
-        height: 36px !important;
     }
 
     [data-testid="baseButton-secondary"]:hover {
@@ -380,7 +307,6 @@ st.markdown("""
         background-color: #f5f5f5 !important;
         color: black !important;
         border: 1px solid #f8f8f8 !important;
-        height: 36px !important;
     }
 
     button:hover, 
@@ -389,43 +315,6 @@ st.markdown("""
         background-color: #2BA903 !important;
         color: white !important;
         border-color: #30C103 !important;
-    }
-
-    /* Responsive adjustments for different screen sizes */
-    @media screen and (max-width: 992px) {
-        div.stButton > button,
-        button.stFormSubmitter {
-            padding: 0px 10px !important;
-            font-size: 13px !important;
-        }
-
-        /* Adjust form layout on smaller screens */
-        div.stForm [data-testid="column"] {
-            padding-left: 0.15rem !important;
-            padding-right: 0.15rem !important;
-        }
-    }
-
-    /* Ensure buttons in form containers have proper height */
-    .stForm .stButton button,
-    .stForm button.stFormSubmitter {
-        height: 36px !important;
-        min-height: 36px !important;
-        line-height: 1 !important;
-    }
-
-    /* Fix form element alignment in search panels */
-    .stForm .stTextInput,
-    .stForm .stSelectbox,
-    .stForm .stNumberInput,
-    .stForm .stDateInput {
-        margin-bottom: 0 !important;
-        padding-bottom: 0 !important;
-    }
-
-    /* Fix label spacing */
-    .stForm label {
-        margin-bottom: 3px !important;
     }
 </style>
 """, unsafe_allow_html=True)
