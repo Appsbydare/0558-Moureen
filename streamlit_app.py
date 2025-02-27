@@ -19,6 +19,7 @@ st.set_page_config(
 )
 
 # 2.B # Custom CSS to override Streamlit styling
+# 2.B # Custom CSS to override Streamlit styling
 st.markdown("""
 <style>
     /* Hide default elements */
@@ -26,23 +27,29 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
+    /* Enforce consistent styling across environments */
+    * {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !important;
+    }
+
     /* Minimize padding */
     .block-container {
-        padding-top: 0.5rem;
-        padding-bottom: 0rem;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
+        padding-top: 0.5rem !important;
+        padding-bottom: 0rem !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        max-width: 100% !important;
     }
 
     /* Make tabs look like the desktop app */
     .stTabs [data-baseweb="tab-list"] {
         gap: 0px;
-        font-weight:bold;
+        font-weight: bold;
     }
 
     .stTabs [data-baseweb="tab"] {
-        padding: 6px 36px;
-        font-weight:bold;
+        padding: 6px 36px !important;
+        font-weight: bold;
         border: 1px solid #ddd;
         border-bottom: none;
         border-radius: 4px 4px 0 0;
@@ -70,25 +77,55 @@ st.markdown("""
     .grey-button, 
     button[kind="primary"],
     button[kind="secondary"],
-    div.stButton > button {
+    div.stButton > button,
+    button.stFormSubmitter {
         background-color: #E6EAE9 !important;
         color: black !important;
         border: 1px solid #D3DBD8 !important;
         border-radius: 16px !important;
-        padding: 0px 20px !important;
+        padding: 4px 20px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        line-height: 1.2 !important;
+        font-size: 14px !important;
         cursor: pointer !important;
-        box-shadow: 4px 4px 5px rgba(0, 0, 0, 0.2) !important;
+        box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.1) !important;
         transition: all 0.3s ease !important;
+        text-align: center !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: auto !important;
     }
 
     /* Button Hover Effects - Green Background with White Text */
     .grey-button:hover,
     button[kind="primary"]:hover,
     button[kind="secondary"]:hover,
-    div.stButton > button:hover {
+    div.stButton > button:hover,
+    button.stFormSubmitter:hover {
         background-color: #2E8B57 !important;
         color: white !important;
         border-color: #2E8B57 !important;
+    }
+
+    /* Fix button width issues */
+    div.stButton {
+        width: auto !important;
+        display: inline-block !important;
+    }
+
+    /* Ensure consistent button sizing in forms */
+    div.stForm div.stButton {
+        width: 100% !important;
+    }
+
+    /* Fix for search/form buttons */
+    button.stFormSubmitter {
+        width: 100% !important;
+        height: 36px !important;
+        padding: 2px 10px !important;
     }
 
     /* Primary Button Styling - White with Black Text */
@@ -105,11 +142,13 @@ st.markdown("""
     }
 
     /* Disabled button styling */
-    div.stButton > button:disabled {
+    div.stButton > button:disabled,
+    button.stFormSubmitter:disabled {
         background-color: #f0f0f0 !important;
         color: #888 !important;
         cursor: not-allowed !important;
         border: 1px solid #ccc !important;
+        opacity: 0.7 !important;
     }
 
     /* Main title */
@@ -117,13 +156,32 @@ st.markdown("""
         text-align: center;
         font-size: 24px;
         font-family: Impact;
-        margin:2px 0;
+        margin: 2px 0;
     }
 
     /* Container for the whole application */
     .app-container {
         margin: 0 auto;
         width: 100%;
+    }
+
+    /* Form panel styling */
+    .stForm {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        padding: 10px !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* Panel headers */
+    .panel-header {
+        text-align: center;
+        font-weight: bold;
+        background-color: #f5f5f5;
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 8px;
     }
 
     /* Improved scrollbar styling - only change thickness */
@@ -154,13 +212,6 @@ st.markdown("""
         padding: 5px;
         margin: 5px 0;
         text-align: center;
-    }
-
-    /* Adjust form button width/positioning for compact layout */
-    div.stButton > button.stFormSubmitter {
-        width: 100%;
-        padding: 0.375rem 0.5rem;
-        font-size: 0.9rem;
     }
 
     /* Ensure the dropdown menus are smaller and match other elements */
@@ -200,6 +251,23 @@ st.markdown("""
         padding-right: 0.25rem !important;
     }
 
+    /* Ensure form elements align properly */
+    .stForm [data-testid="column"] {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+    }
+
+    /* Keep form elements consistent height */
+    .stForm .stTextInput, 
+    .stForm .stSelectbox, 
+    .stForm .stNumberInput,
+    .stForm .stDateInput,
+    .stForm .stButton {
+        height: 36px !important;
+        min-height: 36px !important;
+    }
+
     /* Ensure calculation panel labels don't wrap */
     .calculation-label {
         font-size: 0.85rem !important;
@@ -226,6 +294,10 @@ st.markdown("""
         background-color: white !important;
         color: black !important;
         border: 1px solid #2E8B57 !important;
+        height: 15px !important;
+        width: 25px !important;
+        min-width: 25px !important;
+        padding: 0 !important;
     }
 
     .stNumberInput [data-baseweb="spinner"] button:hover {
@@ -292,6 +364,7 @@ st.markdown("""
         border: 1px solid #2E8B57 !important;
         border-radius: 8px !important;
         transition: all 0.3s ease !important;
+        height: 36px !important;
     }
 
     [data-testid="baseButton-secondary"]:hover {
@@ -307,6 +380,7 @@ st.markdown("""
         background-color: #f5f5f5 !important;
         color: black !important;
         border: 1px solid #f8f8f8 !important;
+        height: 36px !important;
     }
 
     button:hover, 
@@ -315,6 +389,43 @@ st.markdown("""
         background-color: #2BA903 !important;
         color: white !important;
         border-color: #30C103 !important;
+    }
+
+    /* Responsive adjustments for different screen sizes */
+    @media screen and (max-width: 992px) {
+        div.stButton > button,
+        button.stFormSubmitter {
+            padding: 0px 10px !important;
+            font-size: 13px !important;
+        }
+
+        /* Adjust form layout on smaller screens */
+        div.stForm [data-testid="column"] {
+            padding-left: 0.15rem !important;
+            padding-right: 0.15rem !important;
+        }
+    }
+
+    /* Ensure buttons in form containers have proper height */
+    .stForm .stButton button,
+    .stForm button.stFormSubmitter {
+        height: 36px !important;
+        min-height: 36px !important;
+        line-height: 1 !important;
+    }
+
+    /* Fix form element alignment in search panels */
+    .stForm .stTextInput,
+    .stForm .stSelectbox,
+    .stForm .stNumberInput,
+    .stForm .stDateInput {
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+    }
+
+    /* Fix label spacing */
+    .stForm label {
+        margin-bottom: 3px !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -764,8 +875,9 @@ with tab1:
                 except Exception as e:
                     st.error(f"Error loading file: {e}")
 
-
 # 6 # Job Descriptions Tab
+# Job Descriptions Tab
+
 # Job Descriptions Tab
 with tab2:
     # Helper function to reset job search filters
@@ -780,12 +892,16 @@ with tab2:
 
 
     # Initialize session state for job descriptions if not already done
-    if 'edited_rows' not in st.session_state:
-        st.session_state.edited_rows = {}
-    if 'save_needed' not in st.session_state:
-        st.session_state.save_needed = False
+    if 'edited_jobs' not in st.session_state:
+        st.session_state.edited_jobs = {}
+    if 'editing_in_progress' not in st.session_state:
+        st.session_state.editing_in_progress = False
+    if 'save_in_progress' not in st.session_state:
+        st.session_state.save_in_progress = False
     if 'clear_job_filters_clicked' not in st.session_state:
         st.session_state.clear_job_filters_clicked = False
+    if 'save_success_message' not in st.session_state:
+        st.session_state.save_success_message = ""
 
     # Check if we need to handle a previous clear filters request
     if st.session_state.get('clear_job_filters_clicked', False):
@@ -825,7 +941,16 @@ with tab2:
     # Handle clear filters button click
     if clear_job_filters:
         st.session_state.clear_job_filters_clicked = True
-        st.rerun()
+        try:
+            st.experimental_rerun()
+        except:
+            st.warning("Please refresh the page to clear filters.")
+
+    # Display status message if it exists
+    if st.session_state.save_success_message:
+        st.success(st.session_state.save_success_message)
+        # Clear the message after displaying once
+        st.session_state.save_success_message = ""
 
     # Filter job descriptions from benchmark data
     if not st.session_state.benchmark_data.empty:
@@ -834,29 +959,30 @@ with tab2:
 
         # Make sure all required columns exist
         if all(col in st.session_state.benchmark_data.columns for col in job_desc_columns):
-            job_desc_filtered = st.session_state.benchmark_data[job_desc_columns].copy()
+            # Create a display dataframe with only the columns we need
+            display_df = st.session_state.benchmark_data[job_desc_columns].copy()
 
             # Apply filters
             if job_code_search:
-                job_desc_filtered = job_desc_filtered[
-                    job_desc_filtered["Job Code"].astype(str).str.contains(job_code_search, case=False, na=False)
+                display_df = display_df[
+                    display_df["Job Code"].astype(str).str.contains(job_code_search, case=False, na=False)
                 ]
             if job_title_search:
-                job_desc_filtered = job_desc_filtered[
-                    job_desc_filtered["Job Title"].astype(str).str.contains(job_title_search, case=False, na=False)
+                display_df = display_df[
+                    display_df["Job Title"].astype(str).str.contains(job_title_search, case=False, na=False)
                 ]
             if job_family_search:
-                job_desc_filtered = job_desc_filtered[
-                    job_desc_filtered["Job Family"].astype(str).str.contains(job_family_search, case=False, na=False)
+                display_df = display_df[
+                    display_df["Job Family"].astype(str).str.contains(job_family_search, case=False, na=False)
                 ]
 
             # Convert Job Family and Job Description to string before editing
-            job_desc_filtered['Job Family'] = job_desc_filtered['Job Family'].astype(str)
-            job_desc_filtered['Job Description'] = job_desc_filtered['Job Description'].astype(str)
+            display_df['Job Family'] = display_df['Job Family'].astype(str)
+            display_df['Job Description'] = display_df['Job Description'].astype(str)
 
             # Display filtered data with editable cells
             edited_df = st.data_editor(
-                job_desc_filtered,
+                display_df,
                 use_container_width=True,
                 num_rows="fixed",
                 height=400,
@@ -870,10 +996,35 @@ with tab2:
                 key="job_descriptions_data_editor"
             )
 
-            # Check if data was edited and needs saving
-            if edited_df is not None and not edited_df.equals(job_desc_filtered):
-                st.session_state.edited_rows = edited_df
-                st.session_state.save_needed = True
+            # Check for changes between the original and edited dataframes
+            has_changes = False
+            edited_jobs = {}
+
+            # Compare the original display_df with the edited_df
+            if edited_df is not None:
+                for index, row in edited_df.iterrows():
+                    job_code = row["Job Code"]
+                    original_row = display_df.loc[display_df["Job Code"] == job_code]
+
+                    if len(original_row) > 0:
+                        # Check if Job Family was changed
+                        if row["Job Family"] != original_row["Job Family"].values[0]:
+                            has_changes = True
+                            if job_code not in edited_jobs:
+                                edited_jobs[job_code] = {}
+                            edited_jobs[job_code]["Job Family"] = row["Job Family"]
+
+                        # Check if Job Description was changed
+                        if row["Job Description"] != original_row["Job Description"].values[0]:
+                            has_changes = True
+                            if job_code not in edited_jobs:
+                                edited_jobs[job_code] = {}
+                            edited_jobs[job_code]["Job Description"] = row["Job Description"]
+
+            # Store edited jobs in session state for use in save operation
+            if has_changes:
+                st.session_state.edited_jobs = edited_jobs
+                st.session_state.editing_in_progress = True
 
             # Buttons at the bottom
             job_col1, job_col2, job_col3 = st.columns([3, 1, 1])
@@ -884,36 +1035,68 @@ with tab2:
                     st.session_state.show_job_upload = True
 
             with job_col3:
-                # Show save button only when changes need saving
-                if st.session_state.save_needed:
+                # Save Changes button - only enabled if there are changes to save
+                if st.session_state.editing_in_progress and not st.session_state.save_in_progress:
                     save_button = st.button("Save Changes", type="primary")
                     if save_button:
+                        # Set save in progress flag
+                        st.session_state.save_in_progress = True
+
                         try:
-                            # Update the main benchmark dataframe with edited values
-                            for index, row in st.session_state.edited_rows.iterrows():
-                                # Find the corresponding index in the original dataframe
-                                original_indices = st.session_state.benchmark_data.index[
-                                    st.session_state.benchmark_data["Job Code"] == row["Job Code"]
-                                    ].tolist()
+                            # Get the original benchmark data
+                            original_df = st.session_state.benchmark_data.copy()
+                            changes_made = False
 
-                                if original_indices:
-                                    # Update Job Family and Job Description
-                                    st.session_state.benchmark_data.loc[
-                                        original_indices[0], "Job Family"] = row["Job Family"]
-                                    st.session_state.benchmark_data.loc[
-                                        original_indices[0], "Job Description"] = row["Job Description"]
+                            # Apply each edit to the relevant rows in the original dataframe
+                            for job_code, changes in st.session_state.edited_jobs.items():
+                                # Find the row with this job code
+                                row_indices = original_df.index[original_df["Job Code"] == job_code].tolist()
 
-                            # Save to Google Sheets instead of local file
-                            if save_data_to_google_sheet(st.session_state.benchmark_data):
-                                st.success("Changes saved successfully to Google Sheets!")
-                                st.session_state.save_needed = False
-                                st.rerun()
+                                if row_indices:
+                                    row_idx = row_indices[0]
+                                    # Update only the Job Family and Job Description columns if they were changed
+                                    if "Job Family" in changes:
+                                        original_df.loc[row_idx, "Job Family"] = changes["Job Family"]
+                                        changes_made = True
+
+                                    if "Job Description" in changes:
+                                        original_df.loc[row_idx, "Job Description"] = changes["Job Description"]
+                                        changes_made = True
+
+                            if changes_made:
+                                # Save the updated dataframe back to session state
+                                st.session_state.benchmark_data = original_df
+
+                                # Save to Google Sheets
+                                save_success = save_data_to_google_sheet(original_df)
+
+                                if save_success:
+                                    # Set success message to be displayed after rerun
+                                    st.session_state.save_success_message = "Job descriptions updated successfully!"
+                                    # Reset editing flags
+                                    st.session_state.edited_jobs = {}
+                                    st.session_state.editing_in_progress = False
+                                else:
+                                    st.error("Failed to save to Google Sheets. Please try again.")
                             else:
-                                st.error("Failed to save changes to Google Sheets")
+                                st.info("No changes were detected to save.")
+                                st.session_state.edited_jobs = {}
+                                st.session_state.editing_in_progress = False
+
                         except Exception as e:
-                            st.error(f"Error saving changes: {e}")
+                            st.error(f"Error during save operation: {str(e)}")
+
+                        # Reset save in progress flag
+                        st.session_state.save_in_progress = False
+
                 else:
-                    st.button("Save Changes", disabled=True)
+                    # Disabled save button when no changes or operation in progress
+                    save_disabled = not st.session_state.editing_in_progress or st.session_state.save_in_progress
+                    st.button("Save Changes", disabled=save_disabled)
+
+                    # Show save in progress message
+                    if st.session_state.save_in_progress:
+                        st.info("Save operation in progress...")
         else:
             missing_cols = [col for col in job_desc_columns if col not in st.session_state.benchmark_data.columns]
             st.error(f"Missing required columns in benchmark data: {', '.join(missing_cols)}")
@@ -939,43 +1122,51 @@ with tab2:
                     # Check if the uploaded file has the required columns
                     required_cols = ["Job Code", "Job Title", "Job Family", "Job Description"]
                     if all(col in uploaded_data.columns for col in required_cols):
-                        # Update only the Job Family and Job Description columns in benchmark_data
+                        # Create a copy of the current benchmark data
+                        updated_df = st.session_state.benchmark_data.copy()
+
+                        # Update only the Job Family and Job Description columns from uploaded data
                         for index, row in uploaded_data.iterrows():
+                            job_code = row["Job Code"]
+
                             # Find if this Job Code already exists in benchmark_data
-                            match_idx = st.session_state.benchmark_data.index[
-                                st.session_state.benchmark_data["Job Code"] == row["Job Code"]
-                                ].tolist()
+                            match_idx = updated_df.index[updated_df["Job Code"] == job_code].tolist()
 
                             if match_idx:
-                                # Update existing row
-                                st.session_state.benchmark_data.loc[match_idx[0], "Job Family"] = row["Job Family"]
-                                st.session_state.benchmark_data.loc[match_idx[0], "Job Description"] = row[
-                                    "Job Description"]
+                                # Update existing row - only Job Family and Job Description
+                                updated_df.loc[match_idx[0], "Job Family"] = row["Job Family"]
+                                updated_df.loc[match_idx[0], "Job Description"] = row["Job Description"]
                             else:
                                 # This is a new job code, we need to add it to benchmark_data with minimal info
                                 new_row = pd.DataFrame({
-                                    "Job Code": [row["Job Code"]],
+                                    "Job Code": [job_code],
                                     "Job Title": [row["Job Title"]],
                                     "Job Family": [row["Job Family"]],
                                     "Job Description": [row["Job Description"]]
                                 })
+
                                 # Add other required columns with empty/default values
-                                for col in st.session_state.benchmark_data.columns:
+                                for col in updated_df.columns:
                                     if col not in new_row.columns:
                                         new_row[col] = None
 
-                                # Append to benchmark_data
-                                st.session_state.benchmark_data = pd.concat([st.session_state.benchmark_data, new_row],
-                                                                            ignore_index=True)
+                                # Append to updated_df
+                                updated_df = pd.concat([updated_df, new_row], ignore_index=True)
 
-                        # Save to Google Sheets instead of local file
-                        if save_data_to_google_sheet(st.session_state.benchmark_data):
-                            st.success(f"Successfully loaded and saved to Google Sheets")
+                        # Update session state with the modified data
+                        st.session_state.benchmark_data = updated_df
+
+                        # Save to Google Sheets
+                        if save_data_to_google_sheet(updated_df):
+                            st.session_state.save_success_message = "File uploaded and saved successfully!"
                         else:
                             st.error("Failed to save data to Google Sheets")
 
                         st.session_state.show_job_upload = False
-                        st.rerun()
+                        try:
+                            st.experimental_rerun()
+                        except:
+                            st.success("Data uploaded successfully. Please refresh the page to see changes.")
                     else:
                         st.error(
                             f"Uploaded file missing required columns: {', '.join([col for col in required_cols if col not in uploaded_data.columns])}")
