@@ -495,7 +495,20 @@ st.markdown('<div class="main-title">Salary Survey Tool</div>', unsafe_allow_htm
 # Create tabs
 tab1, tab2 = st.tabs(["Benchmark Data", "Job Descriptions"])
 
-# 5 # Benchmark Data Tab
+# Add this function near the beginning of your script, after initializing session state variables
+def reset_filters():
+    """Callback function to reset the filter values"""
+    if 'job_title_filter' in st.session_state:
+        st.session_state.job_title_filter = ""
+    if 'industry_filter' in st.session_state:
+        st.session_state.industry_filter = ""
+    if 'geo_region_filter' in st.session_state:
+        st.session_state.geo_region_filter = ""
+    # Clear calculation status
+    st.session_state.calc_success = False
+    st.session_state.calc_error = ""
+
+
 # 5 # Benchmark Data Tab
 with tab1:
     col1, col2 = st.columns(2)
@@ -557,10 +570,10 @@ with tab1:
                 st.markdown('<div style="padding-top:2px;">&nbsp;</div>', unsafe_allow_html=True)
                 search_button = st.form_submit_button("Search")
 
-            # Clear button in fifth column
+            # Clear button in fifth column - MODIFIED TO USE CALLBACK
             with clear_col:
                 st.markdown('<div style="padding-top:2px;">&nbsp;</div>', unsafe_allow_html=True)
-                clear_filters = st.form_submit_button("Clear")
+                clear_filters = st.form_submit_button("Clear", on_click=reset_filters)
 
     # Calculations Panel form with compact layout
     with col2:
@@ -605,19 +618,8 @@ with tab1:
                 st.markdown('<div style="padding-top:2px;">&nbsp;</div>', unsafe_allow_html=True)
                 calculate_clicked = st.form_submit_button("Calculate")
 
-    # Handle clear filters button click
-    if clear_filters:
-        # Directly clear the filter values
-        st.session_state.job_title_filter = ""
-        st.session_state.industry_filter = ""
-        st.session_state.geo_region_filter = ""
-        # Clear calculation status
-        st.session_state.calc_success = False
-        st.session_state.calc_error = ""
-        try:
-            st.experimental_rerun()
-        except:
-            st.warning("Please refresh the page to see the cleared filters.")
+    # REMOVED: original handling of clear_filters button that was causing the error
+    # The reset_filters callback handles this functionality now
 
     # Initialize session state variables for export
     if 'display_download_link' not in st.session_state:
@@ -704,7 +706,7 @@ with tab1:
 
                     # Force rerun to display the download link
                     try:
-                        st.experimental_rerun()
+                        st.rerun()  # Updated from st.experimental_rerun()
                     except:
                         st.success("Please refresh the page to download your data.")
 
@@ -719,50 +721,15 @@ with tab1:
             if st.button("Clear Download"):
                 st.session_state.display_download_link = False
                 try:
-                    st.experimental_rerun()
+                    st.rerun()  # Updated from st.experimental_rerun()
                 except:
                     st.warning("Please refresh the page to clear the download link.")
 
-        with col3:
-            upload_button = st.button("Upload Data")
-            if upload_button:
-                st.session_state.show_upload = True
+
 
     else:
         st.info("No benchmark data available. Please upload a file.")
 
-    # File uploader - Only show when needed
-    if 'show_upload' not in st.session_state:
-        st.session_state.show_upload = False
-
-    if st.session_state.show_upload:
-        with st.container():
-            uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"],
-                                            key="benchmark_uploader")
-
-            if uploaded_file is not None:
-                try:
-                    if uploaded_file.name.endswith('.csv'):
-                        new_data = pd.read_csv(uploaded_file)
-                    else:
-                        new_data = pd.read_excel(uploaded_file)
-
-                    # Update the session state with new data
-                    st.session_state.benchmark_data = new_data
-
-                    # Save to Google Sheet
-                    if save_data_to_google_sheet(new_data):
-                        st.success(f"Successfully loaded and saved to Google Sheets")
-                    else:
-                        st.error("Failed to save data to Google Sheets")
-
-                    st.session_state.show_upload = False
-                    try:
-                        st.experimental_rerun()
-                    except:
-                        st.success("Data uploaded successfully. Please refresh the page to see changes.")
-                except Exception as e:
-                    st.error(f"Error loading file: {e}")
 
 # 6 # Job Descriptions Tab
 # Job Descriptions Tab
@@ -917,11 +884,6 @@ with tab2:
 
             # Buttons at the bottom
             job_col1, job_col2, job_col3 = st.columns([3, 1, 1])
-
-            with job_col2:
-                upload_job_button = st.button("Upload Data", key="upload_job_btn")
-                if upload_job_button:
-                    st.session_state.show_job_upload = True
 
             with job_col3:
                 # Save Changes button - only enabled if there are changes to save
