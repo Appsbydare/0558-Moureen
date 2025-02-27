@@ -3,4 +3,4 @@ pandas>=2.1.1
 gspread==5.10.0
 google-auth==2.19.1
 google-auth-oauthlib==1.0.0
-pillow==11.0.0
+pillow==9.5.0
