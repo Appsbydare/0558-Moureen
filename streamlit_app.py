@@ -868,7 +868,7 @@ with tab1:
                     try:
                         st.rerun()  # Updated from st.experimental_rerun()
                     except:
-                        st.success("Please refresh the page to download your data.")
+                        st.success("Click Download CSV File")
 
         # Display download link if export was requested
         if st.session_state.display_download_link:
