@@ -9,6 +9,7 @@ import json
 import gspread
 from google.oauth2.service_account import Credentials
 from io import StringIO
+import streamlit.components.v1 as components
 
 # Set page configuration
 st.set_page_config(
@@ -609,6 +610,7 @@ def calculate_adjustments(df, effective_date_input, security_clearance, skills_a
         result_df["Effective Date"] = pd.to_datetime(result_df["Effective Date"], errors='coerce')
 
         # Convert effective_date_input to pandas Timestamp for consistent date comparison
+        # This is the key fix - ensure effective_date_input is the same type as the dates in the dataframe
         effective_date_input_dt = pd.Timestamp(effective_date_input)
 
         # Format the Effective Date to show only the date portion (not time)
@@ -619,8 +621,13 @@ def calculate_adjustments(df, effective_date_input, security_clearance, skills_a
             if pd.isnull(row["Effective Date"]):
                 return 0
 
-            # Calculate difference in years between input date and data effective date
-            date_diff_days = (effective_date_input_dt - row["Effective Date"]).days
+            # Convert both dates to the same type (datetime.date) before subtraction
+            # This is the fix for the unsupported operand error
+            effective_date_as_date = effective_date_input_dt.date()
+            db_date = row["Effective Date"]
+
+            # Calculate the difference in days
+            date_diff_days = (effective_date_as_date - db_date).days
             date_diff_years = date_diff_days / 365.25
 
             # Calculate adjustment amount (3% per year of base salary)
@@ -770,6 +777,8 @@ def verify_admin_password():
 
 # Part 3 ----------------------------------
 
+# Part 3 ----------------------------------
+
 
 # Create app title
 st.markdown('<div class="main-title">Salary Survey Tool</div>', unsafe_allow_html=True)
@@ -863,7 +872,7 @@ with tab1:
 
             # Effective Date in fourth column - smaller font label with US format (MM/DD/YYYY)
             with date_col:
-                st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Effective Date (MM/DD/YYYY):</div>',
+                st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Effective Date:</div>',
                             unsafe_allow_html=True)
                 effective_date = st.date_input("", datetime.datetime.now(), label_visibility="collapsed",
                                                key="effective_date", format="MM/DD/YYYY")
@@ -881,10 +890,17 @@ with tab1:
     if 'export_filename' not in st.session_state:
         st.session_state.export_filename = None
 
-    # Initialize data_editor_key if not already present
-    if 'data_editor_key' not in st.session_state:
-        st.session_state.data_editor_key = "initial_data_editor"
+    # Initialize selection state if not already done
+    if 'selected_rows' not in st.session_state:
+        st.session_state.selected_rows = []
+    if 'select_all' not in st.session_state:
+        st.session_state.select_all = False
 
+# Part 4 ----------------------------------
+# Part 4 ----------------------------------
+
+# Continue Benchmark Data Tab from Part 3
+with tab1:
     # Filter and display data
     if not st.session_state.benchmark_data.empty:
         filtered_data = st.session_state.benchmark_data.copy()
@@ -939,151 +955,173 @@ with tab1:
             if current_filter_match:
                 filtered_data = calc_data
 
-        # Add select all checkbox at the top without using on_change callback
-        select_all = st.checkbox("Select All", value=st.session_state.select_all, key="select_all_box")
-
-        # Handle select all changes manually
-        if select_all != st.session_state.select_all:
-            st.session_state.select_all = select_all
-            if select_all:
-                st.session_state.selected_rows = filtered_data["Job Code"].tolist()
-            else:
-                st.session_state.selected_rows = []
-            # Update the data_editor_key to force a refresh with the new selection state
-            st.session_state.data_editor_key = f"data_editor_{datetime.datetime.now().timestamp()}"
-
         # Display columns - exclude Job Family and Job Description
         display_columns = [col for col in filtered_data.columns if col not in ["Job Family", "Job Description"]]
 
-        # Create selection column based on current session state
-        selection_column = [job_code in st.session_state.selected_rows for job_code in filtered_data["Job Code"]]
+        # Status message placeholder for notifications
+        status_message = st.empty()
 
-        # Add selection column to display data
-        display_df = filtered_data[display_columns].copy()
-        display_df.insert(0, "Select", selection_column)
+        # Put all buttons in a single row at the top (before the data display)
+        col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
 
-        # Display the dataframe with a unique key to control refreshing
-        # Ensure we have a consistent key for data editor
-        if 'editor_key_counter' not in st.session_state:
-            st.session_state.editor_key_counter = 0
-
-        # Only update key when needed, not every render
-        editor_key = f"data_editor_{st.session_state.editor_key_counter}"
-
-        # Display the dataframe
-        edited_df = st.data_editor(
-            display_df,
-            use_container_width=True,
-            height=400,
-            hide_index=True,
-            column_config={
-                "Select": st.column_config.CheckboxColumn(
-                    "Select",
-                    help="Select rows to export"
-                ),
-                "Job Code": st.column_config.TextColumn("Job Code", width="small"),
-                "Job Title": st.column_config.TextColumn("Job Title", width="medium"),
-            },
-            disabled=[col for col in display_df.columns if col != "Select"],
-            key=editor_key,
-            on_change=None  # Prevent automatic on_change behavior
-        )
-
-        # Handle selection changes from the data editor
-        if edited_df is not None and "Select" in edited_df.columns:
-            # Get job codes for the current filtered data
-            job_codes = filtered_data["Job Code"].tolist()
-
-            # Process all selections from the editor at once
-            selected_job_codes = []
-            for i, is_selected in enumerate(edited_df["Select"]):
-                if i < len(job_codes) and is_selected:  # Safety check
-                    selected_job_codes.append(job_codes[i])
-
-            # Check if selection has changed
-            selection_changed = set(selected_job_codes) != set(st.session_state.selected_rows)
-
-            if selection_changed:
-                # Update selected rows
-                st.session_state.selected_rows = selected_job_codes
-
-                # Update select_all state
-                if len(selected_job_codes) == len(filtered_data) and len(filtered_data) > 0:
-                    st.session_state.select_all = True
+        with col1:
+            # Select All button
+            if st.button("Select All" if not st.session_state.select_all else "Deselect All"):
+                # Toggle select all state
+                st.session_state.select_all = not st.session_state.select_all
+                if st.session_state.select_all:
+                    st.session_state.selected_rows = filtered_data["Job Code"].tolist()
                 else:
-                    st.session_state.select_all = False
+                    st.session_state.selected_rows = []
 
-                # Increment the key counter to force refresh next time
-                st.session_state.editor_key_counter += 1
+                # Show selection count in the status message
+                if st.session_state.select_all:
+                    status_message.info(f"{len(filtered_data)} rows selected")
+                else:
+                    status_message.info("No rows selected")
 
-                # Only rerun if absolutely necessary
-                if 'checkbox_click_detected' not in st.session_state:
-                    st.session_state.checkbox_click_detected = True
-                    # Use st.rerun() instead of experimental_rerun
-                    st.rerun()
+                # Force rerun to update checkboxes
+                st.rerun()
 
-        # Action buttons at the bottom
-        col1, col2, col3 = st.columns([2, 1, 1])
 
+        # Replace the current Export buttons code with this improved version
         with col2:
-            # Export button - only export selected rows if any are selected
-            if not filtered_data.empty:
-                if st.button("Export Selected Data"):
-                    # Check if any rows are selected
-                    if st.session_state.selected_rows:
-                        # Filter data to only include selected rows
-                        selected_data = filtered_data[filtered_data["Job Code"].isin(st.session_state.selected_rows)]
+            # Export Selected Data button with direct download
+            if st.button("Export Selected Data"):
+                # Check if any rows are selected
+                if st.session_state.selected_rows:
+                    # Filter data to only include selected rows
+                    selected_data = filtered_data[filtered_data["Job Code"].isin(st.session_state.selected_rows)]
 
-                        # Create export CSV data
-                        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        export_filename = f"salary_data_export_{timestamp}.csv"
-
-                        # Store in session state
-                        st.session_state.export_csv = selected_data.to_csv(index=False).encode()
-                        st.session_state.export_filename = export_filename
-                        st.session_state.display_download_link = True
-
-                        # Force rerun to display the download link
-                        try:
-                            st.rerun()
-                        except:
-                            st.success("Click Download CSV File")
-                    else:
-                        st.warning("Please select at least one row to export")
-
-        with col3:
-            # Export all button - always exports all filtered data
-            if not filtered_data.empty:
-                if st.button("Export All Data"):
                     # Create export CSV data
                     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    export_filename = f"salary_data_export_all_{timestamp}.csv"
+                    export_filename = f"salary_data_export_{timestamp}.csv"
 
-                    # Store in session state
-                    st.session_state.export_csv = filtered_data.to_csv(index=False).encode()
-                    st.session_state.export_filename = export_filename
-                    st.session_state.display_download_link = True
+                    # Generate CSV for direct download
+                    csv_data = selected_data.to_csv(index=False).encode()
+                    b64 = base64.b64encode(csv_data).decode()
 
-                    # Force rerun to display the download link
-                    try:
-                        st.rerun()
-                    except:
-                        st.success("Click Download CSV File")
+                    # Create a hidden HTML component that triggers download immediately
+                    download_link = f'''
+                    <html>
+                    <head>
+                        <title>Download</title>
+                        <script>
+                        function download() {{
+                            var a = document.createElement('a');
+                            a.href = "data:file/csv;base64,{b64}";
+                            a.download = "{export_filename}";
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        }}
+                        // Execute download function as soon as this HTML is rendered
+                        window.onload = download;
+                        </script>
+                    </head>
+                    <body>
+                        If the download doesn't start automatically, <a href="data:file/csv;base64,{b64}" download="{export_filename}">click here</a>.
+                    </body>
+                    </html>
+                    '''
+                    # Display the HTML component
+                    components.html(download_link, height=0)
 
-        # Display download link if export was requested
-        if st.session_state.display_download_link:
-            b64 = base64.b64encode(st.session_state.export_csv).decode()
-            download_href = f'<a href="data:file/csv;base64,{b64}" download="{st.session_state.export_filename}">Download CSV File</a>'
-            st.markdown(download_href, unsafe_allow_html=True)
-            st.success("Your data is ready for download")
+                    # Show success message in status
+                    status_message.success(f"Exporting {len(selected_data)} rows")
+                else:
+                    # Show warning in status
+                    status_message.warning("Please select at least one row to export")
 
-            # Add a button to clear the download link
-            if st.button("Clear Download"):
-                st.session_state.display_download_link = False
-                try:
-                    st.rerun()
-                except:
-                    st.warning("Please refresh the page to clear the download link.")
+        with col3:
+            # Export All Data button with direct download
+            if st.button("Export All Data"):
+                # Create export CSV data
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                export_filename = f"salary_data_export_all_{timestamp}.csv"
+
+                # Generate CSV for direct download
+                csv_data = filtered_data.to_csv(index=False).encode()
+                b64 = base64.b64encode(csv_data).decode()
+
+                # Create a hidden HTML component that triggers download immediately
+                download_link = f'''
+                <html>
+                <head>
+                    <title>Download</title>
+                    <script>
+                    function download() {{
+                        var a = document.createElement('a');
+                        a.href = "data:file/csv;base64,{b64}";
+                        a.download = "{export_filename}";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }}
+                    // Execute download function as soon as this HTML is rendered
+                    window.onload = download;
+                    </script>
+                </head>
+                <body>
+                    If the download doesn't start automatically, <a href="data:file/csv;base64,{b64}" download="{export_filename}">click here</a>.
+                </body>
+                </html>
+                '''
+                # Display the HTML component
+                components.html(download_link, height=0)
+
+                # Show success message in status
+                status_message.success(f"Exporting {len(filtered_data)} rows")
+
+        # Now create a form just for the data display without the duplicate buttons
+        with st.form("data_view_form"):
+            # Create a DataFrame for display with selection column
+            display_df = filtered_data[display_columns].copy()
+
+            # Convert numeric columns to strings to prevent type errors
+            for col in display_df.columns:
+                if display_df[col].dtype in [np.int64, np.float64]:
+                    display_df[col] = display_df[col].astype(str)
+
+            # Add selection column based on session state
+            selection_column = [job_code in st.session_state.selected_rows for job_code in filtered_data["Job Code"]]
+            display_df.insert(0, "Select", selection_column)
+
+            # Display the data editor without a "Select All" checkbox (since we have one in the buttons)
+            edited_df = st.data_editor(
+                display_df,
+                use_container_width=True,
+                height=400,
+                hide_index=True,
+                column_config={
+                    "Select": st.column_config.CheckboxColumn("Select", help="Select rows to export")
+                },
+                disabled=[col for col in display_df.columns if col != "Select"],
+                key="unified_data_editor"
+            )
+
+            # Add a hidden submit button (required for forms)
+            st.form_submit_button("Apply Selection", type="primary")
+
+        # Process the data editor results (outside the form)
+        if edited_df is not None:
+            # Process the selections
+            new_selected_rows = []
+            for i, row in edited_df.iterrows():
+                if row["Select"] and i < len(filtered_data):
+                    job_code = filtered_data.iloc[i]["Job Code"]
+                    new_selected_rows.append(job_code)
+
+            # Update session state if selections changed
+            if set(new_selected_rows) != set(st.session_state.selected_rows):
+                st.session_state.selected_rows = new_selected_rows
+
+                # Update select all state
+                st.session_state.select_all = (len(new_selected_rows) == len(filtered_data) and len(filtered_data) > 0)
+
+                # Show selection count
+                if st.session_state.selected_rows:
+                    status_message.info(f"{len(st.session_state.selected_rows)} rows selected")
 
     else:
         st.info("No benchmark data available. Please upload a file.")
@@ -1175,6 +1213,8 @@ with tab2:
             # Convert Job Family and Job Description to string before editing
             display_df['Job Family'] = display_df['Job Family'].astype(str)
             display_df['Job Description'] = display_df['Job Description'].astype(str)
+            display_df['Job Code'] = display_df['Job Code'].astype(str)
+            display_df['Job Title'] = display_df['Job Title'].astype(str)
 
             # Create a unique key for the data editor to force it to reset after saving
             editor_key = f"job_descriptions_data_editor_{id(st.session_state.benchmark_data)}"
