@@ -1101,7 +1101,7 @@ with tab1:
             )
 
             # Add a hidden submit button (required for forms)
-            st.form_submit_button("Apply Selection", type="primary")
+            st.form_submit_button("Submit", type="primary")
 
         # Process the data editor results (outside the form)
         if edited_df is not None:
