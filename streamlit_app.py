@@ -874,7 +874,7 @@ with tab1:
             with date_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Effective Date:</div>',
                             unsafe_allow_html=True)
-                effective_date = st.date_input("", datetime.datetime.now(), label_visibility="collapsed",
+                effective_date = st.date_input("", datetime.date.today(), label_visibility="collapsed",
                                                key="effective_date", format="MM/DD/YYYY")
 
             # Calculate button in fifth column
@@ -1101,7 +1101,7 @@ with tab1:
             )
 
             # Add a hidden submit button (required for forms)
-            st.form_submit_button("Submit", type="primary")
+            st.form_submit_button("Apply Selection", type="primary")
 
         # Process the data editor results (outside the form)
         if edited_df is not None:
