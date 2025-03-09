@@ -1,5 +1,4 @@
 # Section 1: Import Libraries
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -10,7 +9,6 @@ import json
 import gspread
 from google.oauth2.service_account import Credentials
 from io import StringIO
-from dateutil.relativedelta import relativedelta
 
 # Set page configuration
 st.set_page_config(
@@ -20,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2.B # Custom CSS to override Streamlit styling
+# Custom CSS to override Streamlit styling
 st.markdown("""
 <style>
     /* Hide default elements */
@@ -177,7 +175,7 @@ st.markdown("""
         text-align: center;
         font-weight: 600 !important;
     }
-    
+
     /* Search Panel and other panel styling to look like Windows */
     div:has(> div:contains("Search Panel")),
     div:has(> div:contains("Calculations Panel")) {
@@ -186,7 +184,7 @@ st.markdown("""
         border-radius: 3px !important;
         margin-bottom: 10px !important;
     }
-    
+
     /* Panel title styling */
     div:contains("Search Panel"),
     div:contains("Calculations Panel") {
@@ -249,7 +247,7 @@ st.markdown("""
     .stNumberInput button:hover svg {
         fill: var(--text-primary) !important;
     }
-    
+
     /* Ensure the Search and Clear Filters buttons are properly displayed */
     .search-row {
         display: flex !important;
@@ -267,20 +265,7 @@ st.markdown("""
         border-color: var(--primary-color) !important;
         box-shadow: 0 0 0 1px var(--primary-color) !important;
     }
-    
-    /* Move Clear Filters button to be in the same row as Search button */
-    /* First hide the original button container */
-    [data-testid="stHorizontalBlock"] > div:has(button:contains("Clear Filters")) {
-        display: none !important;
-    }
-    
-    /* Then create a copy that appears next to the Search button */
-    [data-testid="stHorizontalBlock"] > div:has(button:contains("Search")):after {
-        content: "";
-        display: inline-block;
-        width: 10px;
-    }
-    
+
     /* Custom CSS to position buttons side by side */
     .search-filter-row {
         display: flex !important;
@@ -289,17 +274,15 @@ st.markdown("""
         gap: 10px !important;
         margin-top: 10px !important;
     }
-    
+
     /* Target search panel to rearrange search and clear buttons */
     div[data-testid="stVerticalBlock"]:has(div:contains("Search Panel")) {
         position: relative !important;
     }
-    
-    /* Force the Clear Filters button to appear next to Search button */
-    button:contains("Clear Filters") {
-        position: absolute !important;
-        right: 100px !important;
-        top: 228px !important; /* Adjust this value to align with the Search button */
+
+    /* Search button positioning */
+    button:contains("Search") {
+        margin-right: 5px !important;
     }
 
     /* Dropdown/select styling */
@@ -332,16 +315,16 @@ st.markdown("""
     }
 
     /* Dataframe styling */
-    [data-testid="stDataFrame"] {
+    [data-testid="stDataFrame"], [data-testid="stDataEditor"] {
         font-size: 0.85rem !important;
     }
 
-    [data-testid="stDataFrame"] [role="cell"]:focus {
+    [data-testid="stDataFrame"] [role="cell"]:focus, [data-testid="stDataEditor"] [role="cell"]:focus {
         outline-color: var(--primary-color) !important;
     }
 
     /* Table headers */
-    [data-testid="stDataFrame"] th {
+    [data-testid="stDataFrame"] th, [data-testid="stDataEditor"] th {
         background-color: #f0f0f0 !important;
         font-weight: 600 !important;
         color: var(--text-primary) !important;
@@ -350,7 +333,7 @@ st.markdown("""
     }
 
     /* Table cells */
-    [data-testid="stDataFrame"] td {
+    [data-testid="stDataFrame"] td, [data-testid="stDataEditor"] td {
         padding: 3px 6px !important;
     }
 
@@ -360,7 +343,7 @@ st.markdown("""
         background-color: var(--button-bg) !important;
         color: var(--text-primary) !important;
     }
-    
+
     /* Success message styling - Windows style */
     .success-message {
         color: #107C10; /* Windows success green */
@@ -369,20 +352,6 @@ st.markdown("""
         padding: 4px;
         margin: 4px 0;
         text-align: center;
-    }
-    
-    /* Additional styles to force Clear Filters button next to Search */
-    /* This creates a direct CSS solution that works with Streamlit's structure */
-    div.element-container:has(button:contains("Search")) {
-        display: flex !important;
-        flex-direction: row !important;
-        justify-content: flex-end !important;
-        gap: 10px !important;
-    }
-    
-    /* Search button positioning */
-    button:contains("Search") {
-        margin-right: 5px !important;
     }
 
     /* Error message styling */
@@ -394,7 +363,7 @@ st.markdown("""
         margin: 4px 0;
         text-align: center;
     }
-    
+
     /* Calculation panel labels */
     .calculation-label {
         font-size: 0.85rem !important;
@@ -402,7 +371,7 @@ st.markdown("""
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    
+
     /* Data editor styling */
     [data-testid="stDataEditor"] {
         border: 1px solid #ddd;
@@ -411,7 +380,7 @@ st.markdown("""
         margin-bottom: 10px;
         font-size: 0.85rem !important;
     }
-    
+
     /* Change notification styles */
     [data-testid="stNotification"] {
         background-color: #f0f8f0 !important;
@@ -419,40 +388,43 @@ st.markdown("""
         border-radius: 4px !important;
         padding: 8px !important;
     }
-    
+
     /* Compact layout for panels */
     div.stForm [data-testid="column"] {
         padding-left: 0.25rem !important;
         padding-right: 0.25rem !important;
     }
-    
+
     /* Ensure calculation panel controls are properly aligned and sized */
     .calculation-panel [data-testid="stHorizontalBlock"] {
         gap: 2px !important;
         align-items: center !important;
     }
-    
+
     .calculation-panel [data-testid="stHorizontalBlock"] > div {
         min-width: 0 !important;
     }
 
     /* Reduce column gaps in tables */
-    [data-testid="stDataFrame"] table {
+    [data-testid="stDataFrame"] table, [data-testid="stDataEditor"] table {
         border-collapse: collapse !important;
     }
-    
+
     [data-testid="stDataFrame"] table th,
-    [data-testid="stDataFrame"] table td {
+    [data-testid="stDataFrame"] table td,
+    [data-testid="stDataEditor"] table th,
+    [data-testid="stDataEditor"] table td {
         border: 1px solid #ddd !important;
     }
-    
+
     /* Make app container width consistent */
     .app-container {
         margin: 0 auto;
         width: 100%;
         max-width: 1200px;
     }
-       /* Spinner for saving indicator */
+
+    /* Spinner for saving indicator */
     .spinner {
         width: 20px;
         height: 20px;
@@ -462,27 +434,27 @@ st.markdown("""
         animation: spin 1s ease-in-out infinite;
         display: inline-block;
     }
-    
+
     @keyframes spin {
         to { transform: rotate(360deg); }
     }
-    
+
     /* Success message styling */
     .success-message {
         color: #28a745;
         font-weight: 500;
         padding: 5px 0;
     }
-    
+
     /* Checkbox styling for row selection */
     .stCheckbox > div {
         min-height: 28px !important;
     }
-    
+
     .stCheckbox [data-baseweb="checkbox"] {
         margin-bottom: 0 !important;
     }
-    
+
     /* Admin access styling */
     .admin-panel {
         background-color: #f8f8f8;
@@ -491,36 +463,35 @@ st.markdown("""
         padding: 10px;
         margin-top: 10px;
     }
-    
+
     .admin-panel h3 {
         font-size: 1rem !important;
         margin-top: 0 !important;
         margin-bottom: 10px !important;
     }
-    
+
     /* Password input styling */
     .password-input {
         margin-bottom: 10px;
     }
-    
+
     /* Help text styling */
     .help-text {
         font-size: 0.85rem;
         color: #555;
         margin-top: 5px;
     }
-    
+
     /* Format the dataframe selection column */
     .selection-col {
         text-align: center;
         width: 30px;
     }
-    
 </style>
 """, unsafe_allow_html=True)
 
-# PART 2
-# 2 # Google Sheets connection functions
+
+# Google Sheets connection functions
 def get_google_sheet_connection():
     # Define the scope
     scope = ['https://spreadsheets.google.com/feeds',
@@ -612,8 +583,10 @@ def open_google_sheet():
         st.error(f"Error generating Google Sheet link: {e}")
         return None
 
+    # Part 2---------------------------------------------------
 
-# 3 # Function to calculate adjustments with effective date adjustment
+
+# Function to calculate adjustments with corrected date handling
 def calculate_adjustments(df, effective_date_input, security_clearance, skills_adjustment, geo_differential):
     result_df = df.copy()
 
@@ -626,34 +599,41 @@ def calculate_adjustments(df, effective_date_input, security_clearance, skills_a
     if "Min Base" in result_df.columns:
         # Clean the Min Base column (remove $ and commas) before converting to numeric
         if result_df["Min Base"].dtype == object:  # If it's a string
-            result_df["Min Base"] = result_df["Min Base"].astype(str).str.replace('$', '').str.replace(',', '').str.strip()
+            result_df["Min Base"] = result_df["Min Base"].astype(str).str.replace('$', '').str.replace(',',
+                                                                                                       '').str.strip()
 
         # Convert to numeric
         result_df["Min Base"] = pd.to_numeric(result_df["Min Base"], errors='coerce')
 
         # Convert Effective Date from the database to datetime for comparison
         result_df["Effective Date"] = pd.to_datetime(result_df["Effective Date"], errors='coerce')
-        
+
+        # Convert effective_date_input to pandas Timestamp for consistent date comparison
+        effective_date_input_dt = pd.Timestamp(effective_date_input)
+
+        # Format the Effective Date to show only the date portion (not time)
+        result_df["Effective Date"] = result_df["Effective Date"].dt.date
+
         # Calculate date difference and effective date adjustment (3% per year)
         def calculate_effective_date_adjustment(row):
             if pd.isnull(row["Effective Date"]):
                 return 0
-            
+
             # Calculate difference in years between input date and data effective date
-            date_diff = (effective_date_input - row["Effective Date"]).days / 365.25
-            
-            # Calculate adjustment factor: 3% per year
-            adjustment_factor = date_diff * 0.03
-            
-            # Calculate the adjustment amount
-            return row["Min Base"] * adjustment_factor
-        
+            date_diff_days = (effective_date_input_dt - row["Effective Date"]).days
+            date_diff_years = date_diff_days / 365.25
+
+            # Calculate adjustment amount (3% per year of base salary)
+            adjustment_amount = row["Min Base"] * (date_diff_years * 0.03)
+
+            return adjustment_amount
+
         # Apply the calculation to each row
         result_df["Effective Date Adjustment"] = result_df.apply(calculate_effective_date_adjustment, axis=1)
-        
+
         # Base salary after date adjustment
         result_df["Base After Date Adjustment"] = result_df["Min Base"] + result_df["Effective Date Adjustment"]
-        
+
         # Calculate other adjustments based on the date-adjusted base salary
         result_df["Security Clearance Premium (%)"] = result_df["Base After Date Adjustment"] * sec_clearance
         result_df["Special Skills Premium (%)"] = result_df["Base After Date Adjustment"] * skills_adj
@@ -671,8 +651,8 @@ def calculate_adjustments(df, effective_date_input, security_clearance, skills_a
         result_df["Proposed Hourly Rate"] = result_df["Adjusted Annual Salary"] / 2080
 
         # Format currency columns (optional - removes decimal places from dollar amounts)
-        currency_cols = ["Effective Date Adjustment", "Security Clearance Premium (%)", 
-                         "Special Skills Premium (%)", "Misc. Premium or Adjustment (%)", 
+        currency_cols = ["Effective Date Adjustment", "Security Clearance Premium (%)",
+                         "Special Skills Premium (%)", "Misc. Premium or Adjustment (%)",
                          "Adjusted Annual Salary"]
 
         for col in currency_cols:
@@ -682,14 +662,15 @@ def calculate_adjustments(df, effective_date_input, security_clearance, skills_a
         # Format hourly rate to 2 decimal places
         if "Proposed Hourly Rate" in result_df.columns:
             result_df["Proposed Hourly Rate"] = result_df["Proposed Hourly Rate"].round(2)
-            
+
         # Drop the temporary calculation column
-        result_df = result_df.drop(columns=["Base After Date Adjustment"])
+        if "Base After Date Adjustment" in result_df.columns:
+            result_df = result_df.drop(columns=["Base After Date Adjustment"])
 
     return result_df
 
 
-# 4 # Initialize session state variables
+# Initialize session state variables
 if 'benchmark_data' not in st.session_state:
     try:
         # Load data from Google Sheets instead of local file
@@ -698,18 +679,20 @@ if 'benchmark_data' not in st.session_state:
         # If data is empty, initialize with default columns
         if st.session_state.benchmark_data.empty:
             st.session_state.benchmark_data = pd.DataFrame(columns=[
-                "Job Code", "Job Title", "Job Family", "Job Description", "Job Level", "Geographic Region/Location",
+                "Job Code", "Job Title", "Job Family", "Job Description", "Job Level", "Industry", "Company Size",
+                "Geographic Region/Location",
                 "Min Base", "10 PERC", "25 PERC", "50 PERC", "75 PERC", "Max PERC",
                 "TGT Min", "TGT 10", "TGT 25", "TGT 50", "TGT 75", "TGT Max",
                 "Experience", "Education", "Effective Date", "Effective Date Adjustment",
-                "Security Clearance Premium (%)", "Special Skills Premium (%)", 
-                "Misc. Premium or Adjustment (%)", "Adjusted Annual Salary", 
+                "Security Clearance Premium (%)", "Special Skills Premium (%)",
+                "Misc. Premium or Adjustment (%)", "Adjusted Annual Salary",
                 "Proposed Hourly Rate"
             ])
     except Exception as e:
         st.session_state.benchmark_data = pd.DataFrame()
         st.error(f"Error loading benchmark data: {e}")
 
+# Initialize other session state variables
 if 'last_successful_save' not in st.session_state:
     st.session_state.last_successful_save = False
 
@@ -741,7 +724,8 @@ if 'admin_authenticated' not in st.session_state:
 if 'admin_password' not in st.session_state:
     st.session_state.admin_password = "admin123"  # Default password, can be changed
 
-# Add this function near the beginning of your script, after initializing session state variables
+
+# Add this function for resetting search filters
 def reset_filters():
     """Callback function to reset the filter values"""
     if 'job_title_filter' in st.session_state:
@@ -775,7 +759,6 @@ def toggle_row_selection(job_code):
     else:
         st.session_state.selected_rows.append(job_code)
 
-
 # Function to verify admin password
 def verify_admin_password():
     entered_password = st.session_state.password_input
@@ -784,7 +767,10 @@ def verify_admin_password():
     else:
         st.error("Incorrect password")
 
-# PART 3
+
+# Part 3 ----------------------------------
+
+
 # Create app title
 st.markdown('<div class="main-title">Salary Survey Tool</div>', unsafe_allow_html=True)
 
@@ -839,7 +825,7 @@ with tab1:
                 st.markdown('<div style="padding-top:2px;">&nbsp;</div>', unsafe_allow_html=True)
                 search_button = st.form_submit_button("Search")
 
-            # Clear button in fifth column - MODIFIED TO USE CALLBACK
+            # Clear button in fifth column
             with clear_col:
                 st.markdown('<div style="padding-top:2px;">&nbsp;</div>', unsafe_allow_html=True)
                 clear_filters = st.form_submit_button("Clear", on_click=reset_filters)
@@ -857,30 +843,30 @@ with tab1:
             # Security Clearance in first column - smaller font label
             with sec_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Security Clearance (%):</div>',
-                           unsafe_allow_html=True)
+                            unsafe_allow_html=True)
                 security_clearance = st.number_input("", min_value=0.0, max_value=100.0, step=0.1, format="%.1f",
-                                                    label_visibility="collapsed", key="security_clearance")
+                                                     label_visibility="collapsed", key="security_clearance")
 
             # Skills Adjustment in second column - smaller font label
             with skills_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Skills Adjustment (%):</div>',
-                           unsafe_allow_html=True)
+                            unsafe_allow_html=True)
                 skills_adjustment = st.number_input("", min_value=-100.0, max_value=100.0, step=0.1, format="%.1f",
-                                                   label_visibility="collapsed", key="skills_adjustment")
+                                                    label_visibility="collapsed", key="skills_adjustment")
 
             # Geo Differential in third column - smaller font label
             with geo_diff_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Geo Differential (%):</div>',
-                           unsafe_allow_html=True)
+                            unsafe_allow_html=True)
                 geo_differential = st.number_input("", min_value=-100.0, max_value=100.0, step=0.1, format="%.1f",
-                                                  label_visibility="collapsed", key="geo_differential")
+                                                   label_visibility="collapsed", key="geo_differential")
 
             # Effective Date in fourth column - smaller font label with US format (MM/DD/YYYY)
             with date_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Effective Date (MM/DD/YYYY):</div>',
-                           unsafe_allow_html=True)
+                            unsafe_allow_html=True)
                 effective_date = st.date_input("", datetime.datetime.now(), label_visibility="collapsed",
-                                              key="effective_date", format="MM/DD/YYYY")
+                                               key="effective_date", format="MM/DD/YYYY")
 
             # Calculate button in fifth column
             with calc_col:
@@ -894,6 +880,10 @@ with tab1:
         st.session_state.export_csv = None
     if 'export_filename' not in st.session_state:
         st.session_state.export_filename = None
+
+    # Initialize data_editor_key if not already present
+    if 'data_editor_key' not in st.session_state:
+        st.session_state.data_editor_key = "initial_data_editor"
 
     # Filter and display data
     if not st.session_state.benchmark_data.empty:
@@ -949,30 +939,88 @@ with tab1:
             if current_filter_match:
                 filtered_data = calc_data
 
-        # Add select all checkbox at the top
-        select_all = st.checkbox("Select All", value=st.session_state.select_all, on_change=toggle_select_all)
-        
-        # Create a copy for display with selection checkboxes
-        display_df = filtered_data.copy()
-        
-        # Create selection column
-        selection_col = []
-        for _, row in display_df.iterrows():
-            job_code = row["Job Code"]
-            is_selected = job_code in st.session_state.selected_rows
-            checkbox_key = f"select_{job_code}"
-            selection_col.append(st.checkbox("", value=is_selected, key=checkbox_key, 
-                               on_change=toggle_row_selection, args=(job_code,)))
-        
-        # Display the filtered and possibly calculated data, excluding Job Family and Job Description columns
+        # Add select all checkbox at the top without using on_change callback
+        select_all = st.checkbox("Select All", value=st.session_state.select_all, key="select_all_box")
+
+        # Handle select all changes manually
+        if select_all != st.session_state.select_all:
+            st.session_state.select_all = select_all
+            if select_all:
+                st.session_state.selected_rows = filtered_data["Job Code"].tolist()
+            else:
+                st.session_state.selected_rows = []
+            # Update the data_editor_key to force a refresh with the new selection state
+            st.session_state.data_editor_key = f"data_editor_{datetime.datetime.now().timestamp()}"
+
+        # Display columns - exclude Job Family and Job Description
         display_columns = [col for col in filtered_data.columns if col not in ["Job Family", "Job Description"]]
-        
-        # Create a dataframe with selection checkboxes
-        selection_df = pd.DataFrame({"Select": selection_col})
-        display_result = pd.concat([selection_df, filtered_data[display_columns].reset_index(drop=True)], axis=1)
-        
+
+        # Create selection column based on current session state
+        selection_column = [job_code in st.session_state.selected_rows for job_code in filtered_data["Job Code"]]
+
+        # Add selection column to display data
+        display_df = filtered_data[display_columns].copy()
+        display_df.insert(0, "Select", selection_column)
+
+        # Display the dataframe with a unique key to control refreshing
+        # Ensure we have a consistent key for data editor
+        if 'editor_key_counter' not in st.session_state:
+            st.session_state.editor_key_counter = 0
+
+        # Only update key when needed, not every render
+        editor_key = f"data_editor_{st.session_state.editor_key_counter}"
+
         # Display the dataframe
-        st.dataframe(display_result, use_container_width=True, height=400)
+        edited_df = st.data_editor(
+            display_df,
+            use_container_width=True,
+            height=400,
+            hide_index=True,
+            column_config={
+                "Select": st.column_config.CheckboxColumn(
+                    "Select",
+                    help="Select rows to export"
+                ),
+                "Job Code": st.column_config.TextColumn("Job Code", width="small"),
+                "Job Title": st.column_config.TextColumn("Job Title", width="medium"),
+            },
+            disabled=[col for col in display_df.columns if col != "Select"],
+            key=editor_key,
+            on_change=None  # Prevent automatic on_change behavior
+        )
+
+        # Handle selection changes from the data editor
+        if edited_df is not None and "Select" in edited_df.columns:
+            # Get job codes for the current filtered data
+            job_codes = filtered_data["Job Code"].tolist()
+
+            # Process all selections from the editor at once
+            selected_job_codes = []
+            for i, is_selected in enumerate(edited_df["Select"]):
+                if i < len(job_codes) and is_selected:  # Safety check
+                    selected_job_codes.append(job_codes[i])
+
+            # Check if selection has changed
+            selection_changed = set(selected_job_codes) != set(st.session_state.selected_rows)
+
+            if selection_changed:
+                # Update selected rows
+                st.session_state.selected_rows = selected_job_codes
+
+                # Update select_all state
+                if len(selected_job_codes) == len(filtered_data) and len(filtered_data) > 0:
+                    st.session_state.select_all = True
+                else:
+                    st.session_state.select_all = False
+
+                # Increment the key counter to force refresh next time
+                st.session_state.editor_key_counter += 1
+
+                # Only rerun if absolutely necessary
+                if 'checkbox_click_detected' not in st.session_state:
+                    st.session_state.checkbox_click_detected = True
+                    # Use st.rerun() instead of experimental_rerun
+                    st.rerun()
 
         # Action buttons at the bottom
         col1, col2, col3 = st.columns([2, 1, 1])
@@ -985,7 +1033,7 @@ with tab1:
                     if st.session_state.selected_rows:
                         # Filter data to only include selected rows
                         selected_data = filtered_data[filtered_data["Job Code"].isin(st.session_state.selected_rows)]
-                        
+
                         # Create export CSV data
                         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                         export_filename = f"salary_data_export_{timestamp}.csv"
@@ -997,7 +1045,7 @@ with tab1:
 
                         # Force rerun to display the download link
                         try:
-                            st.rerun()  # Updated from st.experimental_rerun()
+                            st.rerun()
                         except:
                             st.success("Click Download CSV File")
                     else:
@@ -1018,7 +1066,7 @@ with tab1:
 
                     # Force rerun to display the download link
                     try:
-                        st.rerun()  # Updated from st.experimental_rerun()
+                        st.rerun()
                     except:
                         st.success("Click Download CSV File")
 
@@ -1033,14 +1081,14 @@ with tab1:
             if st.button("Clear Download"):
                 st.session_state.display_download_link = False
                 try:
-                    st.rerun()  # Updated from st.experimental_rerun()
+                    st.rerun()
                 except:
                     st.warning("Please refresh the page to clear the download link.")
 
     else:
         st.info("No benchmark data available. Please upload a file.")
 
-# Part 4
+
 # Define a callback function to reset job search filters
 def reset_job_filters():
     """Callback function to reset job search filters"""
@@ -1053,7 +1101,6 @@ def reset_job_filters():
 
 
 # 6 # Job Descriptions Tab
-
 with tab2:
     # Initialize session state for job descriptions if not already done
     if 'edited_jobs' not in st.session_state:
@@ -1245,46 +1292,47 @@ with tab2:
     else:
         st.info("No benchmark data available. Please upload a file.")
 
-
 # 7 # Administration Tab
 with tab3:
-    st.markdown('<div style="text-align:center; font-weight:bold; background-color:#f5f5f5; padding:5px; border:1px solid #ddd; border-radius:5px;">Administration</div>', unsafe_allow_html=True)
-    
+    st.markdown(
+        '<div style="text-align:center; font-weight:bold; background-color:#f5f5f5; padding:5px; border:1px solid #ddd; border-radius:5px;">Administration</div>',
+        unsafe_allow_html=True)
+
     st.write("### Data Management")
-    
+
     # Admin Authentication
     if not st.session_state.admin_authenticated:
         with st.form("admin_auth_form"):
             st.markdown("#### Administrator Access")
             st.write("Enter the administrator password to access data management features.")
-            
+
             # Password input
             password = st.text_input("Password", type="password", key="password_input")
-            
+
             # Submit button
             submit = st.form_submit_button("Login")
-            
+
             if submit:
                 verify_admin_password()
-    
+
     # Admin Panel (shown only after authentication)
     if st.session_state.admin_authenticated:
         st.success("Administrator authenticated successfully")
-        
+
         st.markdown("### Data Management Tools")
-        
+
         # Direct Google Sheets access
-        st.write("#### Direct Database Access")
         with st.form(key="db_access_form"):
+            st.write("#### Direct Database Access")
             st.write("Click the button below to open the Google Sheet database directly in a new tab.")
-            
+
             sheet_url = open_google_sheet()
             if sheet_url:
                 st.markdown(f"[Open Google Sheet Database]({sheet_url})", unsafe_allow_html=True)
-            
+
             # Submit button
             st.form_submit_button("Open Database")
-        
+
         # Data upload explanation
         with st.form(key="data_upload_form"):
             st.write("#### Data Upload Instructions")
@@ -1294,17 +1342,17 @@ with tab3:
             2. Make your changes directly in the Google Sheet
             3. All changes are saved automatically
             4. The app will reflect the updated data on next load or refresh
-            
+
             **Important Notes:**
             - Do not delete or rename the 'MainDatabase' worksheet
             - Keep the column headers intact
             - You can add or remove rows as needed
             - Format date fields as MM/DD/YYYY
             """)
-            
+
             # Submit button
             st.form_submit_button("I Understand")
-        
+
         # User access management
         with st.form(key="access_management_form"):
             st.write("#### User Access Management")
@@ -1317,13 +1365,13 @@ with tab3:
                 - Add user emails and set appropriate permissions
                 - Choose 'Editor' for users who should be able to modify data
                 - Choose 'Viewer' for users who should only be able to view data
-            
+
             The administrator password for this tool is separate from Google account access.
             """)
-            
-            # Add a submit button (even if it doesn't do anything specific)
+
+            # Add a submit button
             st.form_submit_button("Acknowledge")
-        
+
         # Data storage information
         with st.form(key="data_storage_form"):
             st.write("#### Data Storage Information")
@@ -1332,28 +1380,28 @@ with tab3:
             - All data is stored in Google Sheets
             - This provides reliability, backup, and version history
             - Your data remains accessible even if this tool experiences temporary issues
-            
+
             **Backup Recommendations:**
             - Periodically export data using the 'Export All Data' button in the Benchmark tab
             - Consider setting up automatic backups of the Google Sheet using Google Apps Script
             - For critical data, maintain a separate backup in another location
             """)
-            
+
             # Add a submit button
             st.form_submit_button("I Understand")
-        
+
         # Reset admin session
         with st.form(key="logout_form"):
             st.write("#### Administrator Session")
             st.write("Click the button below to end your administrator session.")
-            
+
             # Add a submit button for logout
             logout_button = st.form_submit_button("Logout")
-            
+
             if logout_button:
                 st.session_state.admin_authenticated = False
                 st.rerun()
-    
+
     # Help information
     with st.form(key="help_form"):
         st.write("### Help")
@@ -1363,11 +1411,10 @@ with tab3:
         - For calculation issues, check that your input values are in the correct format
         - Date formats should be MM/DD/YYYY
         - Numeric values should not include currency symbols or commas
-        
+
         **Support Contact:**
         For assistance, contact your administrator or IT support team.
         """)
-        
+
         # Add submit button
         st.form_submit_button("Got It")
-
