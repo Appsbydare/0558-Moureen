@@ -2,6 +2,7 @@
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 import datetime
 import os
 import base64
@@ -9,6 +10,7 @@ import json
 import gspread
 from google.oauth2.service_account import Credentials
 from io import StringIO
+from dateutil.relativedelta import relativedelta
 
 # Set page configuration
 st.set_page_config(
@@ -20,7 +22,6 @@ st.set_page_config(
 
 # 2.B # Custom CSS to override Streamlit styling
 st.markdown("""
-
 <style>
     /* Hide default elements */
     #MainMenu {visibility: hidden;}
@@ -473,12 +474,53 @@ st.markdown("""
         padding: 5px 0;
     }
     
+    /* Checkbox styling for row selection */
+    .stCheckbox > div {
+        min-height: 28px !important;
+    }
+    
+    .stCheckbox [data-baseweb="checkbox"] {
+        margin-bottom: 0 !important;
+    }
+    
+    /* Admin access styling */
+    .admin-panel {
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+    
+    .admin-panel h3 {
+        font-size: 1rem !important;
+        margin-top: 0 !important;
+        margin-bottom: 10px !important;
+    }
+    
+    /* Password input styling */
+    .password-input {
+        margin-bottom: 10px;
+    }
+    
+    /* Help text styling */
+    .help-text {
+        font-size: 0.85rem;
+        color: #555;
+        margin-top: 5px;
+    }
+    
+    /* Format the dataframe selection column */
+    .selection-col {
+        text-align: center;
+        width: 30px;
+    }
+    
 </style>
 """, unsafe_allow_html=True)
 
-
+# PART 2
 # 2 # Google Sheets connection functions
-# Google Sheets connection functions
 def get_google_sheet_connection():
     # Define the scope
     scope = ['https://spreadsheets.google.com/feeds',
@@ -559,8 +601,20 @@ def save_data_to_google_sheet(df):
         st.error(f"Error saving data to Google Sheets: {e}")
         return False
 
-# 3 # Function to calculate adjustments
-def calculate_adjustments(df, security_clearance, skills_adjustment, geo_differential):
+
+def open_google_sheet():
+    """Generate a link to open the Google Sheet directly"""
+    try:
+        sheet_id = st.secrets["gsheet"]["spreadsheet_id"]
+        sheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/edit"
+        return sheet_url
+    except Exception as e:
+        st.error(f"Error generating Google Sheet link: {e}")
+        return None
+
+
+# 3 # Function to calculate adjustments with effective date adjustment
+def calculate_adjustments(df, effective_date_input, security_clearance, skills_adjustment, geo_differential):
     result_df = df.copy()
 
     # Convert percentage inputs to floats
@@ -572,20 +626,42 @@ def calculate_adjustments(df, security_clearance, skills_adjustment, geo_differe
     if "Min Base" in result_df.columns:
         # Clean the Min Base column (remove $ and commas) before converting to numeric
         if result_df["Min Base"].dtype == object:  # If it's a string
-            result_df["Min Base"] = result_df["Min Base"].astype(str).str.replace('$', '').str.replace(',',
-                                                                                                      '').str.strip()
+            result_df["Min Base"] = result_df["Min Base"].astype(str).str.replace('$', '').str.replace(',', '').str.strip()
 
         # Convert to numeric
         result_df["Min Base"] = pd.to_numeric(result_df["Min Base"], errors='coerce')
 
-        # Calculate adjustments
-        result_df["Security Clearance Premium (%)"] = result_df["Min Base"] * sec_clearance
-        result_df["Special Skills Premium (%)"] = result_df["Min Base"] * skills_adj
-        result_df["Misc. Premium or Adjustment (%)"] = result_df["Min Base"] * geo_diff
+        # Convert Effective Date from the database to datetime for comparison
+        result_df["Effective Date"] = pd.to_datetime(result_df["Effective Date"], errors='coerce')
+        
+        # Calculate date difference and effective date adjustment (3% per year)
+        def calculate_effective_date_adjustment(row):
+            if pd.isnull(row["Effective Date"]):
+                return 0
+            
+            # Calculate difference in years between input date and data effective date
+            date_diff = (effective_date_input - row["Effective Date"]).days / 365.25
+            
+            # Calculate adjustment factor: 3% per year
+            adjustment_factor = date_diff * 0.03
+            
+            # Calculate the adjustment amount
+            return row["Min Base"] * adjustment_factor
+        
+        # Apply the calculation to each row
+        result_df["Effective Date Adjustment"] = result_df.apply(calculate_effective_date_adjustment, axis=1)
+        
+        # Base salary after date adjustment
+        result_df["Base After Date Adjustment"] = result_df["Min Base"] + result_df["Effective Date Adjustment"]
+        
+        # Calculate other adjustments based on the date-adjusted base salary
+        result_df["Security Clearance Premium (%)"] = result_df["Base After Date Adjustment"] * sec_clearance
+        result_df["Special Skills Premium (%)"] = result_df["Base After Date Adjustment"] * skills_adj
+        result_df["Misc. Premium or Adjustment (%)"] = result_df["Base After Date Adjustment"] * geo_diff
 
         # Calculate total adjusted salary
         result_df["Adjusted Annual Salary"] = (
-                result_df["Min Base"] +
+                result_df["Base After Date Adjustment"] +
                 result_df["Security Clearance Premium (%)"] +
                 result_df["Special Skills Premium (%)"] +
                 result_df["Misc. Premium or Adjustment (%)"]
@@ -595,8 +671,9 @@ def calculate_adjustments(df, security_clearance, skills_adjustment, geo_differe
         result_df["Proposed Hourly Rate"] = result_df["Adjusted Annual Salary"] / 2080
 
         # Format currency columns (optional - removes decimal places from dollar amounts)
-        currency_cols = ["Security Clearance Premium (%)", "Special Skills Premium (%)",
-                        "Misc. Premium or Adjustment (%)", "Adjusted Annual Salary"]
+        currency_cols = ["Effective Date Adjustment", "Security Clearance Premium (%)", 
+                         "Special Skills Premium (%)", "Misc. Premium or Adjustment (%)", 
+                         "Adjusted Annual Salary"]
 
         for col in currency_cols:
             if col in result_df.columns:
@@ -605,6 +682,9 @@ def calculate_adjustments(df, security_clearance, skills_adjustment, geo_differe
         # Format hourly rate to 2 decimal places
         if "Proposed Hourly Rate" in result_df.columns:
             result_df["Proposed Hourly Rate"] = result_df["Proposed Hourly Rate"].round(2)
+            
+        # Drop the temporary calculation column
+        result_df = result_df.drop(columns=["Base After Date Adjustment"])
 
     return result_df
 
@@ -618,13 +698,13 @@ if 'benchmark_data' not in st.session_state:
         # If data is empty, initialize with default columns
         if st.session_state.benchmark_data.empty:
             st.session_state.benchmark_data = pd.DataFrame(columns=[
-                "Job Code", "Job Title", "Job Family", "Job Description", "Job Level", "Industry", "Company Size",
-                "Geographic Region/Location",
+                "Job Code", "Job Title", "Job Family", "Job Description", "Job Level", "Geographic Region/Location",
                 "Min Base", "10 PERC", "25 PERC", "50 PERC", "75 PERC", "Max PERC",
                 "TGT Min", "TGT 10", "TGT 25", "TGT 50", "TGT 75", "TGT Max",
-                "Experience", "Education", "Effective Date", "Security Clearance Premium (%)",
-                "Special Skills Premium (%)", "Misc. Premium or Adjustment (%)",
-                "Adjusted Annual Salary", "Proposed Hourly Rate"
+                "Experience", "Education", "Effective Date", "Effective Date Adjustment",
+                "Security Clearance Premium (%)", "Special Skills Premium (%)", 
+                "Misc. Premium or Adjustment (%)", "Adjusted Annual Salary", 
+                "Proposed Hourly Rate"
             ])
     except Exception as e:
         st.session_state.benchmark_data = pd.DataFrame()
@@ -649,25 +729,67 @@ if 'save_needed' not in st.session_state:
 if 'clear_filters_clicked' not in st.session_state:
     st.session_state.clear_filters_clicked = False
 
-# Create app title
-st.markdown('<div class="main-title">Salary Survey Tool</div>', unsafe_allow_html=True)
+# Initialize session state for row selection
+if 'selected_rows' not in st.session_state:
+    st.session_state.selected_rows = []
+if 'select_all' not in st.session_state:
+    st.session_state.select_all = False
 
-# Create tabs
-tab1, tab2 = st.tabs(["Benchmark Data", "Job Descriptions"])
+# Initialize admin authentication
+if 'admin_authenticated' not in st.session_state:
+    st.session_state.admin_authenticated = False
+if 'admin_password' not in st.session_state:
+    st.session_state.admin_password = "admin123"  # Default password, can be changed
 
 # Add this function near the beginning of your script, after initializing session state variables
 def reset_filters():
     """Callback function to reset the filter values"""
     if 'job_title_filter' in st.session_state:
         st.session_state.job_title_filter = ""
-    if 'industry_filter' in st.session_state:
-        st.session_state.industry_filter = ""
     if 'geo_region_filter' in st.session_state:
         st.session_state.geo_region_filter = ""
     # Clear calculation status
     st.session_state.calc_success = False
     st.session_state.calc_error = ""
+    # Reset selection
+    st.session_state.selected_rows = []
+    st.session_state.select_all = False
 
+
+# Function to toggle select all rows
+def toggle_select_all():
+    st.session_state.select_all = not st.session_state.select_all
+    if st.session_state.select_all:
+        # If select all is checked, select all visible rows
+        if 'filtered_data' in st.session_state:
+            st.session_state.selected_rows = st.session_state.filtered_data['Job Code'].tolist()
+    else:
+        # If select all is unchecked, clear selection
+        st.session_state.selected_rows = []
+
+
+# Function to toggle row selection
+def toggle_row_selection(job_code):
+    if job_code in st.session_state.selected_rows:
+        st.session_state.selected_rows.remove(job_code)
+    else:
+        st.session_state.selected_rows.append(job_code)
+
+
+# Function to verify admin password
+def verify_admin_password():
+    entered_password = st.session_state.password_input
+    if entered_password == st.session_state.admin_password:
+        st.session_state.admin_authenticated = True
+    else:
+        st.error("Incorrect password")
+
+# PART 3
+# Create app title
+st.markdown('<div class="main-title">Salary Survey Tool</div>', unsafe_allow_html=True)
+
+# Create tabs
+tab1, tab2, tab3 = st.tabs(["Benchmark Data", "Job Descriptions", "Administration"])
 
 # 5 # Benchmark Data Tab
 with tab1:
@@ -675,17 +797,14 @@ with tab1:
 
     # Get unique values for dropdowns
     if not st.session_state.benchmark_data.empty:
-        industries = [""] + sorted(st.session_state.benchmark_data["Industry"].unique().tolist())
         geo_regions = [""] + sorted(st.session_state.benchmark_data["Geographic Region/Location"].unique().tolist())
     else:
-        industries = [""]
         geo_regions = [""]
 
     # Check if we need to clear filters from previous run
     if 'clear_filters_clicked' in st.session_state and st.session_state.clear_filters_clicked:
         # Reset filter values before creating the widgets
         st.session_state.job_title_filter = ""
-        st.session_state.industry_filter = ""
         st.session_state.geo_region_filter = ""
         # Reset the flag
         st.session_state.clear_filters_clicked = False
@@ -697,23 +816,13 @@ with tab1:
                 '<p style="text-align:center; font-weight:bold; background-color:#f5f5f5; padding:5px; border:1px solid #ddd; border-radius:5px;">Search Panel</p>',
                 unsafe_allow_html=True)
 
-            # Create a single row with 5 columns (3 inputs + 2 buttons)
-            title_col, industry_col, geo_col, search_col, clear_col = st.columns([3, 3, 3, 1.5, 1.5])
+            # Create a single row with 4 columns (2 inputs + 2 buttons)
+            title_col, geo_col, search_col, clear_col = st.columns([4, 4, 1.5, 1.5])
 
             # Job Title in first column
             with title_col:
                 st.markdown('<div style="padding-top:2px;">Job Title:</div>', unsafe_allow_html=True)
                 job_title_filter = st.text_input("", label_visibility="collapsed", key="job_title_filter")
-
-            # Industry in second column
-            with industry_col:
-                st.markdown('<div style="padding-top:2px;">Industry:</div>', unsafe_allow_html=True)
-                industry_filter = st.selectbox(
-                    "",
-                    industries,
-                    label_visibility="collapsed",
-                    key="industry_filter"
-                )
 
             # Geo Region/Location in third column
             with geo_col:
@@ -756,30 +865,27 @@ with tab1:
             with skills_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Skills Adjustment (%):</div>',
                            unsafe_allow_html=True)
-                skills_adjustment = st.number_input("", min_value=0.0, max_value=100.0, step=0.1, format="%.1f",
+                skills_adjustment = st.number_input("", min_value=-100.0, max_value=100.0, step=0.1, format="%.1f",
                                                    label_visibility="collapsed", key="skills_adjustment")
 
             # Geo Differential in third column - smaller font label
             with geo_diff_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Geo Differential (%):</div>',
                            unsafe_allow_html=True)
-                geo_differential = st.number_input("", min_value=0.0, max_value=100.0, step=0.1, format="%.1f",
+                geo_differential = st.number_input("", min_value=-100.0, max_value=100.0, step=0.1, format="%.1f",
                                                   label_visibility="collapsed", key="geo_differential")
 
-            # Effective Date in fourth column - smaller font label
+            # Effective Date in fourth column - smaller font label with US format (MM/DD/YYYY)
             with date_col:
-                st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Effective Date:</div>',
+                st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Effective Date (MM/DD/YYYY):</div>',
                            unsafe_allow_html=True)
                 effective_date = st.date_input("", datetime.datetime.now(), label_visibility="collapsed",
-                                              key="effective_date")
+                                              key="effective_date", format="MM/DD/YYYY")
 
             # Calculate button in fifth column
             with calc_col:
                 st.markdown('<div style="padding-top:2px;">&nbsp;</div>', unsafe_allow_html=True)
                 calculate_clicked = st.form_submit_button("Calculate")
-
-    # REMOVED: original handling of clear_filters button that was causing the error
-    # The reset_filters callback handles this functionality now
 
     # Initialize session state variables for export
     if 'display_download_link' not in st.session_state:
@@ -798,10 +904,11 @@ with tab1:
             filtered_data = filtered_data[
                 filtered_data["Job Title"].str.contains(job_title_filter, case=False, na=False)
             ]
-        if industry_filter:
-            filtered_data = filtered_data[filtered_data["Industry"] == industry_filter]
         if geo_region_filter:
             filtered_data = filtered_data[filtered_data["Geographic Region/Location"] == geo_region_filter]
+
+        # Store filtered data in session state for select all functionality
+        st.session_state.filtered_data = filtered_data.copy()
 
         # Apply calculations if the button was clicked
         if calculate_clicked:
@@ -809,6 +916,7 @@ with tab1:
                 # Call the calculation function with the form values
                 filtered_data = calculate_adjustments(
                     filtered_data,
+                    effective_date,
                     security_clearance,
                     skills_adjustment,
                     geo_differential
@@ -835,29 +943,73 @@ with tab1:
             if job_title_filter and not all(
                     calc_data["Job Title"].str.contains(job_title_filter, case=False, na=False)):
                 current_filter_match = False
-            if industry_filter and not all(calc_data["Industry"] == industry_filter):
-                current_filter_match = False
             if geo_region_filter and not all(calc_data["Geographic Region/Location"] == geo_region_filter):
                 current_filter_match = False
 
             if current_filter_match:
                 filtered_data = calc_data
 
+        # Add select all checkbox at the top
+        select_all = st.checkbox("Select All", value=st.session_state.select_all, on_change=toggle_select_all)
+        
+        # Create a copy for display with selection checkboxes
+        display_df = filtered_data.copy()
+        
+        # Create selection column
+        selection_col = []
+        for _, row in display_df.iterrows():
+            job_code = row["Job Code"]
+            is_selected = job_code in st.session_state.selected_rows
+            checkbox_key = f"select_{job_code}"
+            selection_col.append(st.checkbox("", value=is_selected, key=checkbox_key, 
+                               on_change=toggle_row_selection, args=(job_code,)))
+        
         # Display the filtered and possibly calculated data, excluding Job Family and Job Description columns
         display_columns = [col for col in filtered_data.columns if col not in ["Job Family", "Job Description"]]
-        st.dataframe(filtered_data[display_columns], use_container_width=True, height=400)
+        
+        # Create a dataframe with selection checkboxes
+        selection_df = pd.DataFrame({"Select": selection_col})
+        display_result = pd.concat([selection_df, filtered_data[display_columns].reset_index(drop=True)], axis=1)
+        
+        # Display the dataframe
+        st.dataframe(display_result, use_container_width=True, height=400)
 
         # Action buttons at the bottom
         col1, col2, col3 = st.columns([2, 1, 1])
 
         with col2:
-            # Export button
+            # Export button - only export selected rows if any are selected
             if not filtered_data.empty:
-                # When Export button is clicked, prepare the CSV but don't display it yet
-                if st.button("Export Data"):
+                if st.button("Export Selected Data"):
+                    # Check if any rows are selected
+                    if st.session_state.selected_rows:
+                        # Filter data to only include selected rows
+                        selected_data = filtered_data[filtered_data["Job Code"].isin(st.session_state.selected_rows)]
+                        
+                        # Create export CSV data
+                        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                        export_filename = f"salary_data_export_{timestamp}.csv"
+
+                        # Store in session state
+                        st.session_state.export_csv = selected_data.to_csv(index=False).encode()
+                        st.session_state.export_filename = export_filename
+                        st.session_state.display_download_link = True
+
+                        # Force rerun to display the download link
+                        try:
+                            st.rerun()  # Updated from st.experimental_rerun()
+                        except:
+                            st.success("Click Download CSV File")
+                    else:
+                        st.warning("Please select at least one row to export")
+
+        with col3:
+            # Export all button - always exports all filtered data
+            if not filtered_data.empty:
+                if st.button("Export All Data"):
                     # Create export CSV data
                     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    export_filename = f"salary_data_export_{timestamp}.csv"
+                    export_filename = f"salary_data_export_all_{timestamp}.csv"
 
                     # Store in session state
                     st.session_state.export_csv = filtered_data.to_csv(index=False).encode()
@@ -885,10 +1037,10 @@ with tab1:
                 except:
                     st.warning("Please refresh the page to clear the download link.")
 
-
-
     else:
         st.info("No benchmark data available. Please upload a file.")
+
+# Part 4
 # Define a callback function to reset job search filters
 def reset_job_filters():
     """Callback function to reset job search filters"""
@@ -1092,3 +1244,104 @@ with tab2:
             st.error(f"Missing required columns in benchmark data: {', '.join(missing_cols)}")
     else:
         st.info("No benchmark data available. Please upload a file.")
+
+
+# 7 # Administration Tab
+with tab3:
+    st.markdown('<div style="text-align:center; font-weight:bold; background-color:#f5f5f5; padding:5px; border:1px solid #ddd; border-radius:5px;">Administration</div>', unsafe_allow_html=True)
+    
+    st.write("### Data Management")
+    
+    # Admin Authentication
+    if not st.session_state.admin_authenticated:
+        with st.form("admin_auth_form"):
+            st.markdown("#### Administrator Access")
+            st.write("Enter the administrator password to access data management features.")
+            
+            # Password input
+            password = st.text_input("Password", type="password", key="password_input")
+            
+            # Submit button
+            submit = st.form_submit_button("Login")
+            
+            if submit:
+                verify_admin_password()
+    
+    # Admin Panel (shown only after authentication)
+    if st.session_state.admin_authenticated:
+        st.success("Administrator authenticated successfully")
+        
+        st.markdown("### Data Management Tools")
+        
+        # Direct Google Sheets access
+        st.write("#### Direct Database Access")
+        st.write("Click the button below to open the Google Sheet database directly in a new tab.")
+        
+        sheet_url = open_google_sheet()
+        if sheet_url:
+            st.markdown(f"[Open Google Sheet Database]({sheet_url})", unsafe_allow_html=True)
+        
+        # Data upload explanation
+        st.write("#### Data Upload Instructions")
+        st.write("""
+        To update the database:
+        1. Click the link above to open the Google Sheet
+        2. Make your changes directly in the Google Sheet
+        3. All changes are saved automatically
+        4. The app will reflect the updated data on next load or refresh
+        
+        **Important Notes:**
+        - Do not delete or rename the 'MainDatabase' worksheet
+        - Keep the column headers intact
+        - You can add or remove rows as needed
+        - Format date fields as MM/DD/YYYY
+        """)
+        
+        # User access management
+        st.write("#### User Access Management")
+        st.write("""
+        To control who can access this tool:
+        1. Share the Streamlit app URL only with authorized users
+        2. For database editing privileges:
+            - Open the Google Sheet database
+            - Click the 'Share' button in the top-right corner
+            - Add user emails and set appropriate permissions
+            - Choose 'Editor' for users who should be able to modify data
+            - Choose 'Viewer' for users who should only be able to view data
+        
+        The administrator password for this tool is separate from Google account access.
+        """)
+        
+        # Data storage information
+        st.write("#### Data Storage Information")
+        st.write("""
+        **Where is my data stored?**
+        - All data is stored in Google Sheets
+        - This provides reliability, backup, and version history
+        - Your data remains accessible even if this tool experiences temporary issues
+        
+        **Backup Recommendations:**
+        - Periodically export data using the 'Export All Data' button in the Benchmark tab
+        - Consider setting up automatic backups of the Google Sheet using Google Apps Script
+        - For critical data, maintain a separate backup in another location
+        """)
+        
+        # Reset admin session
+        if st.button("Logout"):
+            st.session_state.admin_authenticated = False
+            st.rerun()
+    
+    # Help information
+    st.write("### Help")
+    st.write("""
+    **Troubleshooting:**
+    - If the tool is not loading data, verify that the Google Sheet is accessible
+    - For calculation issues, check that your input values are in the correct format
+    - Date formats should be MM/DD/YYYY
+    - Numeric values should not include currency symbols or commas
+    
+    **Support Contact:**
+    For assistance, contact your administrator or IT support team.
+    """)
+
+
