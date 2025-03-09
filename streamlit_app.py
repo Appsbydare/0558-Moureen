@@ -1275,73 +1275,99 @@ with tab3:
         
         # Direct Google Sheets access
         st.write("#### Direct Database Access")
-        st.write("Click the button below to open the Google Sheet database directly in a new tab.")
-        
-        sheet_url = open_google_sheet()
-        if sheet_url:
-            st.markdown(f"[Open Google Sheet Database]({sheet_url})", unsafe_allow_html=True)
+        with st.form(key="db_access_form"):
+            st.write("Click the button below to open the Google Sheet database directly in a new tab.")
+            
+            sheet_url = open_google_sheet()
+            if sheet_url:
+                st.markdown(f"[Open Google Sheet Database]({sheet_url})", unsafe_allow_html=True)
+            
+            # Submit button
+            st.form_submit_button("Open Database")
         
         # Data upload explanation
-        st.write("#### Data Upload Instructions")
-        st.write("""
-        To update the database:
-        1. Click the link above to open the Google Sheet
-        2. Make your changes directly in the Google Sheet
-        3. All changes are saved automatically
-        4. The app will reflect the updated data on next load or refresh
-        
-        **Important Notes:**
-        - Do not delete or rename the 'MainDatabase' worksheet
-        - Keep the column headers intact
-        - You can add or remove rows as needed
-        - Format date fields as MM/DD/YYYY
-        """)
+        with st.form(key="data_upload_form"):
+            st.write("#### Data Upload Instructions")
+            st.write("""
+            To update the database:
+            1. Click the link above to open the Google Sheet
+            2. Make your changes directly in the Google Sheet
+            3. All changes are saved automatically
+            4. The app will reflect the updated data on next load or refresh
+            
+            **Important Notes:**
+            - Do not delete or rename the 'MainDatabase' worksheet
+            - Keep the column headers intact
+            - You can add or remove rows as needed
+            - Format date fields as MM/DD/YYYY
+            """)
+            
+            # Submit button
+            st.form_submit_button("I Understand")
         
         # User access management
-        st.write("#### User Access Management")
-        st.write("""
-        To control who can access this tool:
-        1. Share the Streamlit app URL only with authorized users
-        2. For database editing privileges:
-            - Open the Google Sheet database
-            - Click the 'Share' button in the top-right corner
-            - Add user emails and set appropriate permissions
-            - Choose 'Editor' for users who should be able to modify data
-            - Choose 'Viewer' for users who should only be able to view data
-        
-        The administrator password for this tool is separate from Google account access.
-        """)
+        with st.form(key="access_management_form"):
+            st.write("#### User Access Management")
+            st.write("""
+            To control who can access this tool:
+            1. Share the Streamlit app URL only with authorized users
+            2. For database editing privileges:
+                - Open the Google Sheet database
+                - Click the 'Share' button in the top-right corner
+                - Add user emails and set appropriate permissions
+                - Choose 'Editor' for users who should be able to modify data
+                - Choose 'Viewer' for users who should only be able to view data
+            
+            The administrator password for this tool is separate from Google account access.
+            """)
+            
+            # Add a submit button (even if it doesn't do anything specific)
+            st.form_submit_button("Acknowledge")
         
         # Data storage information
-        st.write("#### Data Storage Information")
-        st.write("""
-        **Where is my data stored?**
-        - All data is stored in Google Sheets
-        - This provides reliability, backup, and version history
-        - Your data remains accessible even if this tool experiences temporary issues
-        
-        **Backup Recommendations:**
-        - Periodically export data using the 'Export All Data' button in the Benchmark tab
-        - Consider setting up automatic backups of the Google Sheet using Google Apps Script
-        - For critical data, maintain a separate backup in another location
-        """)
+        with st.form(key="data_storage_form"):
+            st.write("#### Data Storage Information")
+            st.write("""
+            **Where is my data stored?**
+            - All data is stored in Google Sheets
+            - This provides reliability, backup, and version history
+            - Your data remains accessible even if this tool experiences temporary issues
+            
+            **Backup Recommendations:**
+            - Periodically export data using the 'Export All Data' button in the Benchmark tab
+            - Consider setting up automatic backups of the Google Sheet using Google Apps Script
+            - For critical data, maintain a separate backup in another location
+            """)
+            
+            # Add a submit button
+            st.form_submit_button("I Understand")
         
         # Reset admin session
-        if st.button("Logout"):
-            st.session_state.admin_authenticated = False
-            st.rerun()
+        with st.form(key="logout_form"):
+            st.write("#### Administrator Session")
+            st.write("Click the button below to end your administrator session.")
+            
+            # Add a submit button for logout
+            logout_button = st.form_submit_button("Logout")
+            
+            if logout_button:
+                st.session_state.admin_authenticated = False
+                st.rerun()
     
     # Help information
-    st.write("### Help")
-    st.write("""
-    **Troubleshooting:**
-    - If the tool is not loading data, verify that the Google Sheet is accessible
-    - For calculation issues, check that your input values are in the correct format
-    - Date formats should be MM/DD/YYYY
-    - Numeric values should not include currency symbols or commas
-    
-    **Support Contact:**
-    For assistance, contact your administrator or IT support team.
-    """)
-
+    with st.form(key="help_form"):
+        st.write("### Help")
+        st.write("""
+        **Troubleshooting:**
+        - If the tool is not loading data, verify that the Google Sheet is accessible
+        - For calculation issues, check that your input values are in the correct format
+        - Date formats should be MM/DD/YYYY
+        - Numeric values should not include currency symbols or commas
+        
+        **Support Contact:**
+        For assistance, contact your administrator or IT support team.
+        """)
+        
+        # Add submit button
+        st.form_submit_button("Got It")
 
