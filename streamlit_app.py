@@ -874,8 +874,8 @@ with tab1:
             with date_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Effective Date:</div>',
                             unsafe_allow_html=True)
-                effective_date = st.date_input("Effective Date (MM/DD/YYYY)", datetime.date.today(), 
-                              label_visibility="collapsed", key="effective_date")
+                effective_date = st.date_input("Effective Date (MM/DD/YYYY)", datetime.date.today(),
+                                               label_visibility="collapsed", key="effective_date")
 
             # Calculate button in fifth column
             with calc_col:
@@ -981,7 +981,7 @@ with tab1:
                     status_message.info("No rows selected")
 
                 # Force rerun to update checkboxes
-                st.rerun()
+                st.experimental_rerun()
 
 
         # Replace the current Export buttons code with this improved version
@@ -1311,7 +1311,7 @@ with tab2:
                                         # Set success flag for next render
                                         st.session_state.last_successful_save = True
                                         # Force rerun to refresh UI
-                                        st.rerun()
+                                        st.experimental_rerun()
                                     else:
                                         st.error("Failed to save to Google Sheets. Please try again.")
                                 else:
@@ -1319,7 +1319,7 @@ with tab2:
                                     # Clear edit tracking
                                     st.session_state.edited_jobs = {}
                                     st.session_state.editing_in_progress = False
-                                    st.rerun()
+                                    st.experimental_rerun()
 
                             except Exception as e:
                                 st.error(f"Error during save operation: {str(e)}")
@@ -1440,7 +1440,7 @@ with tab3:
 
             if logout_button:
                 st.session_state.admin_authenticated = False
-                st.rerun()
+                st.experimental_rerun()
 
     # Help information
     with st.form(key="help_form"):
