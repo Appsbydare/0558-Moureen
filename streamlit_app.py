@@ -153,25 +153,25 @@ st.markdown("""
     /* Main title */
     .main-title {
         text-align: center;
-        font-size: 24px;
+        font-size: 28px;
         font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
-        margin: 2px 0;
+        margin: 0px 0;
     }
 
     /* Panel styling */
     [data-testid="stVerticalBlock"] > div > div[style*="flex"] > div > div[data-testid="stVerticalBlock"] {
         border: 1px solid #e0e0e0;
-        border-radius: 5px;
+        border-radius: 2px;
         padding: 8px !important;
         background-color: #fcfcfc;
-        margin-bottom: 10px;
+        margin-bottom: 2px;
     }
 
     /* Panel headers - Windows style */
     [data-testid="stVerticalBlock"] h3 {
         font-size: 1rem !important;
         margin-top: 0 !important;
-        margin-bottom: 5px !important;
+        margin-bottom: 2px !important;
         color: var(--text-primary) !important;
         text-align: center;
         font-weight: 600 !important;
@@ -183,7 +183,7 @@ st.markdown("""
         background-color: #f5f5f5 !important;
         border: 1px solid #ddd !important;
         border-radius: 3px !important;
-        margin-bottom: 10px !important;
+        margin-bottom: 2px !important;
     }
 
     /* Panel title styling */
@@ -192,7 +192,7 @@ st.markdown("""
         font-weight: 600 !important;
         color: var(--text-primary) !important;
         background-color: var(--tab-active) !important;
-        padding: 5px 10px !important;
+        padding: 2px 10px !important;
         border-bottom: 1px solid #ddd !important;
     }
 
@@ -297,7 +297,7 @@ st.markdown("""
 
     /* Date picker more compact */
     .stDateInput > div > div {
-        min-height: 28px !important;
+        min-height: 24px !important;
     }
 
     /* Improved scrollbar styling */
@@ -335,7 +335,7 @@ st.markdown("""
 
     /* Table cells */
     [data-testid="stDataFrame"] td, [data-testid="stDataEditor"] td {
-        padding: 3px 6px !important;
+        padding: 1px 6px !important;
     }
 
     /* Form button styling */
@@ -360,7 +360,7 @@ st.markdown("""
         color: #d32f2f;
         font-size: 14px;
         font-weight: bold;
-        padding: 4px;
+        padding: 1px;
         margin: 4px 0;
         text-align: center;
     }
@@ -492,6 +492,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+# Part 2 ####################################
 # Google Sheets connection functions
 def get_google_sheet_connection():
     # Define the scope
@@ -583,8 +584,6 @@ def open_google_sheet():
     except Exception as e:
         st.error(f"Error generating Google Sheet link: {e}")
         return None
-
-    # Part 2---------------------------------------------------
 
 
 # Function to calculate adjustments with corrected date handling
@@ -766,6 +765,7 @@ def toggle_row_selection(job_code):
     else:
         st.session_state.selected_rows.append(job_code)
 
+
 # Function to verify admin password
 def verify_admin_password():
     entered_password = st.session_state.password_input
@@ -775,9 +775,17 @@ def verify_admin_password():
         st.error("Incorrect password")
 
 
-# Part 3 ----------------------------------
+# Define a callback function to reset job search filters
+def reset_job_filters():
+    """Callback function to reset job search filters"""
+    if 'job_code_search' in st.session_state:
+        st.session_state.job_code_search = ""
+    if 'job_title_search' in st.session_state:
+        st.session_state.job_title_search = ""
+    if 'job_family_search' in st.session_state:
+        st.session_state.job_family_search = ""
 
-# Part 3 ----------------------------------
+# Part 3 #######################################################
 
 
 # Create app title
@@ -804,9 +812,9 @@ with tab1:
         # Reset the flag
         st.session_state.clear_filters_clicked = False
 
-    # Search Panel form with compact layout
+    # Search Panel form with compact layout - USING UNIQUE KEY
     with col1:
-        with st.form(key="search_form"):
+        with st.form(key="search_form_benchmark"):  # CHANGED KEY HERE
             st.markdown(
                 '<p style="text-align:center; font-weight:bold; background-color:#f5f5f5; padding:5px; border:1px solid #ddd; border-radius:5px;">Search Panel</p>',
                 unsafe_allow_html=True)
@@ -816,12 +824,12 @@ with tab1:
 
             # Job Title in first column
             with title_col:
-                st.markdown('<div style="padding-top:2px;">Job Title:</div>', unsafe_allow_html=True)
+                st.markdown('<div style="padding-top:1px;">Job Title:</div>', unsafe_allow_html=True)
                 job_title_filter = st.text_input("", label_visibility="collapsed", key="job_title_filter")
 
             # Geo Region/Location in third column
             with geo_col:
-                st.markdown('<div style="padding-top:2px;">Geo Region/Location:</div>', unsafe_allow_html=True)
+                st.markdown('<div style="padding-top:1px;">Geo Region/Location:</div>', unsafe_allow_html=True)
                 geo_region_filter = st.selectbox(
                     "",
                     geo_regions,
@@ -839,9 +847,9 @@ with tab1:
                 st.markdown('<div style="padding-top:2px;">&nbsp;</div>', unsafe_allow_html=True)
                 clear_filters = st.form_submit_button("Clear", on_click=reset_filters)
 
-    # Calculations Panel form with compact layout
+    # Calculations Panel form with compact layout - USING UNIQUE KEY
     with col2:
-        with st.form(key="calc_form"):
+        with st.form(key="calc_form_benchmark"):  # CHANGED KEY HERE
             st.markdown(
                 '<p style="text-align:center; font-weight:bold; background-color:#f5f5f5; padding:5px; border:1px solid #ddd; border-radius:5px;">Calculations Panel</p>',
                 unsafe_allow_html=True)
@@ -856,26 +864,28 @@ with tab1:
                 security_clearance = st.number_input("", min_value=0.0, max_value=100.0, step=0.1, format="%.1f",
                                                      label_visibility="collapsed", key="security_clearance")
 
-            # Skills Adjustment in second column - smaller font label
+            # Skills Adjustment in second column - smaller font label - Default set to 0.0
             with skills_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Skills Adjustment (%):</div>',
                             unsafe_allow_html=True)
                 skills_adjustment = st.number_input("", min_value=-100.0, max_value=100.0, step=0.1, format="%.1f",
-                                                    label_visibility="collapsed", key="skills_adjustment")
+                                                    label_visibility="collapsed", key="skills_adjustment", value=0.0)
 
-            # Geo Differential in third column - smaller font label
+            # Geo Differential in third column - smaller font label - Default set to 0.0
             with geo_diff_col:
                 st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Geo Differential (%):</div>',
                             unsafe_allow_html=True)
                 geo_differential = st.number_input("", min_value=-100.0, max_value=100.0, step=0.1, format="%.1f",
-                                                   label_visibility="collapsed", key="geo_differential")
+                                                   label_visibility="collapsed", key="geo_differential", value=0.0)
 
-            # Effective Date in fourth column - smaller font label with US format (MM/DD/YYYY)
+            # Effective Date in fourth column - Explicitly using MM/DD/YYYY format
             with date_col:
-                st.markdown('<div style="padding-top:1px; font-size:0.9rem;">Effective Date:</div>',
+                st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Effective Date:</div>',
                             unsafe_allow_html=True)
-                effective_date = st.date_input("Effective Date:", datetime.date.today(),
-                                               label_visibility="collapsed", key="effective_date",format="MM/DD/YYYY")
+                # Changed the label to explicitly mention MM/DD/YYYY format
+                effective_date = st.date_input("", datetime.date.today(),
+                                               label_visibility="collapsed", key="effective_date",
+                                               format="MM/DD/YYYY")  # Setting the format explicitly to MM/DD/YYYY
 
             # Calculate button in fifth column
             with calc_col:
@@ -896,8 +906,8 @@ with tab1:
     if 'select_all' not in st.session_state:
         st.session_state.select_all = False
 
-# Part 4 ----------------------------------
-# Part 4 ----------------------------------
+
+# Part 4 ######################################################
 
 # Continue Benchmark Data Tab from Part 3
 with tab1:
@@ -981,7 +991,7 @@ with tab1:
                     status_message.info("No rows selected")
 
                 # Force rerun to update checkboxes
-                st.experimental_rerun()
+                st.rerun()
 
 
         # Replace the current Export buttons code with this improved version
@@ -1073,8 +1083,8 @@ with tab1:
                 # Show success message in status
                 status_message.success(f"Exporting {len(filtered_data)} rows")
 
-        # Now create a form just for the data display without the duplicate buttons
-        with st.form("data_view_form"):
+        # Now create a form just for the data display without the duplicate buttons - USING UNIQUE KEY
+        with st.form("data_view_form_benchmark"):  # CHANGED KEY HERE
             # Create a DataFrame for display with selection column
             display_df = filtered_data[display_columns].copy()
 
@@ -1127,18 +1137,11 @@ with tab1:
         st.info("No benchmark data available. Please upload a file.")
 
 
-# Define a callback function to reset job search filters
-def reset_job_filters():
-    """Callback function to reset job search filters"""
-    if 'job_code_search' in st.session_state:
-        st.session_state.job_code_search = ""
-    if 'job_title_search' in st.session_state:
-        st.session_state.job_title_search = ""
-    if 'job_family_search' in st.session_state:
-        st.session_state.job_family_search = ""
 
 
-# 6 # Job Descriptions Tab
+# Part 5 #####################################
+# - Job Descriptions Tab
+
 with tab2:
     # Initialize session state for job descriptions if not already done
     if 'edited_jobs' not in st.session_state:
@@ -1156,8 +1159,8 @@ with tab2:
         # Reset the flag after displaying
         st.session_state.last_successful_save = False
 
-    # Search Panel form for Job Descriptions
-    with st.form(key="job_search_form"):
+    # Search Panel form for Job Descriptions - USING UNIQUE KEY
+    with st.form(key="search_form_jobs"):  # CHANGED KEY HERE
         st.markdown(
             '<p style="text-align:center; font-weight:bold; background-color:#f5f5f5; padding:5px; border:1px solid #ddd; border-radius:5px;">Search Panel</p>',
             unsafe_allow_html=True)
@@ -1221,7 +1224,7 @@ with tab2:
             if st.session_state.last_successful_save:
                 editor_key = f"job_descriptions_data_editor_after_save_{datetime.datetime.now().timestamp()}"
 
-            # Display filtered data with editable cells
+            # Modified to make all fields disabled/non-editable
             edited_df = st.data_editor(
                 display_df,
                 use_container_width=True,
@@ -1230,14 +1233,16 @@ with tab2:
                 column_config={
                     "Job Code": st.column_config.TextColumn("Job Code", disabled=True),
                     "Job Title": st.column_config.TextColumn("Job Title", disabled=True),
-                    "Job Family": st.column_config.TextColumn("Job Family"),
-                    "Job Description": st.column_config.TextColumn("Job Description", width="large")
+                    "Job Family": st.column_config.TextColumn("Job Family", disabled=True),
+                    "Job Description": st.column_config.TextColumn("Job Description", width="large", disabled=True)
                 },
                 hide_index=True,
-                key=editor_key
+                key=editor_key,
+                disabled=True  # Disable the entire data editor
             )
 
-            # Check for changes between the original and edited dataframes
+            # Check for changes between the original and edited dataframes - we keep this code
+            # even though editing is disabled temporarily
             has_changes = False
             edited_jobs = {}
 
@@ -1267,72 +1272,28 @@ with tab2:
                 st.session_state.edited_jobs = edited_jobs
                 st.session_state.editing_in_progress = True
 
-            # Buttons at the bottom
+            # Buttons at the bottom - removed since editing is temporarily disabled
             job_col1, job_col2, job_col3 = st.columns([3, 1, 1])
 
             with job_col3:
-                # Save Changes button - only enabled if there are changes to save
-                if st.session_state.editing_in_progress:
-                    save_button = st.button("Save Changes", type="primary", key="save_changes_button")
-                    if save_button:
-                        with st.spinner("Saving changes..."):
-                            try:
-                                # Get the original benchmark data
-                                original_df = st.session_state.benchmark_data.copy()
-                                changes_made = False
-
-                                # Apply each edit to the relevant rows in the original dataframe
-                                for job_code, changes in st.session_state.edited_jobs.items():
-                                    # Find the row with this job code
-                                    row_indices = original_df.index[original_df["Job Code"] == job_code].tolist()
-
-                                    if row_indices:
-                                        row_idx = row_indices[0]
-                                        # Update only the Job Family and Job Description columns if they were changed
-                                        if "Job Family" in changes:
-                                            original_df.loc[row_idx, "Job Family"] = changes["Job Family"]
-                                            changes_made = True
-
-                                        if "Job Description" in changes:
-                                            original_df.loc[row_idx, "Job Description"] = changes["Job Description"]
-                                            changes_made = True
-
-                                if changes_made:
-                                    # Save the updated dataframe back to session state
-                                    st.session_state.benchmark_data = original_df
-
-                                    # Save to Google Sheets
-                                    save_success = save_data_to_google_sheet(original_df)
-
-                                    if save_success:
-                                        # Clear edit tracking
-                                        st.session_state.edited_jobs = {}
-                                        st.session_state.editing_in_progress = False
-                                        # Set success flag for next render
-                                        st.session_state.last_successful_save = True
-                                        # Force rerun to refresh UI
-                                        st.experimental_rerun()
-                                    else:
-                                        st.error("Failed to save to Google Sheets. Please try again.")
-                                else:
-                                    st.info("No changes were detected to save.")
-                                    # Clear edit tracking
-                                    st.session_state.edited_jobs = {}
-                                    st.session_state.editing_in_progress = False
-                                    st.experimental_rerun()
-
-                            except Exception as e:
-                                st.error(f"Error during save operation: {str(e)}")
-                else:
-                    # Disabled save button when no changes
-                    st.button("Save Changes", disabled=True, key="save_disabled_button")
+                # Display a disabled Save Changes button with a note that editing is temporarily disabled
+                st.button("Save Changes", disabled=True, key="save_disabled_button")
+                st.markdown(
+                    '<div style="font-size:0.8rem; color:#d32f2f;">Editing is temporarily disabled.</div>',
+                    unsafe_allow_html=True
+                )
         else:
             missing_cols = [col for col in job_desc_columns if col not in st.session_state.benchmark_data.columns]
             st.error(f"Missing required columns in benchmark data: {', '.join(missing_cols)}")
     else:
         st.info("No benchmark data available. Please upload a file.")
 
-# 7 # Administration Tab
+
+
+
+
+# Part 6 ######################################################
+# - Administration Tab
 with tab3:
     st.markdown(
         '<div style="text-align:center; font-weight:bold; background-color:#f5f5f5; padding:5px; border:1px solid #ddd; border-radius:5px;">Administration</div>',
@@ -1342,7 +1303,7 @@ with tab3:
 
     # Admin Authentication
     if not st.session_state.admin_authenticated:
-        with st.form("admin_auth_form"):
+        with st.form("admin_auth_form"):  # Unique form key
             st.markdown("#### Administrator Access")
             st.write("Enter the administrator password to access data management features.")
 
@@ -1362,7 +1323,7 @@ with tab3:
         st.markdown("### Data Management Tools")
 
         # Direct Google Sheets access
-        with st.form(key="db_access_form"):
+        with st.form(key="db_access_form"):  # Unique form key
             st.write("#### Direct Database Access")
             st.write("Click the button below to open the Google Sheet database directly in a new tab.")
 
@@ -1374,7 +1335,7 @@ with tab3:
             st.form_submit_button("Open Database")
 
         # Data upload explanation
-        with st.form(key="data_upload_form"):
+        with st.form(key="data_upload_form"):  # Unique form key
             st.write("#### Data Upload Instructions")
             st.write("""
             To update the database:
@@ -1394,7 +1355,7 @@ with tab3:
             st.form_submit_button("I Understand")
 
         # User access management
-        with st.form(key="access_management_form"):
+        with st.form(key="access_management_form"):  # Unique form key
             st.write("#### User Access Management")
             st.write("""
             To control who can access this tool:
@@ -1413,7 +1374,7 @@ with tab3:
             st.form_submit_button("Acknowledge")
 
         # Data storage information
-        with st.form(key="data_storage_form"):
+        with st.form(key="data_storage_form"):  # Unique form key
             st.write("#### Data Storage Information")
             st.write("""
             **Where is my data stored?**
@@ -1431,7 +1392,7 @@ with tab3:
             st.form_submit_button("I Understand")
 
         # Reset admin session
-        with st.form(key="logout_form"):
+        with st.form(key="logout_form"):  # Unique form key
             st.write("#### Administrator Session")
             st.write("Click the button below to end your administrator session.")
 
@@ -1440,10 +1401,10 @@ with tab3:
 
             if logout_button:
                 st.session_state.admin_authenticated = False
-                st.experimental_rerun()
+                st.rerun()
 
     # Help information
-    with st.form(key="help_form"):
+    with st.form(key="help_form"):  # Unique form key
         st.write("### Help")
         st.write("""
         **Troubleshooting:**
