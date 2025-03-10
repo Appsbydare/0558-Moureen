@@ -875,7 +875,7 @@ with tab1:
                 st.markdown('<div style="padding-top:1px; font-size:0.9rem;">Effective Date:</div>',
                             unsafe_allow_html=True)
                 effective_date = st.date_input("Effective Date:", datetime.date.today(),
-                                               label_visibility="collapsed", key="effective_date",format="MM/YYYY/MM")
+                                               label_visibility="collapsed", key="effective_date",format="MM/DD/YYYY")
 
             # Calculate button in fifth column
             with calc_col:
