@@ -872,9 +872,9 @@ with tab1:
 
             # Effective Date in fourth column - smaller font label with US format (MM/DD/YYYY)
             with date_col:
-                st.markdown('<div style="padding-top:2px; font-size:0.9rem;">Effective Date:</div>',
+                st.markdown('<div style="padding-top:1px; font-size:0.9rem;">Effective Date:</div>',
                             unsafe_allow_html=True)
-                effective_date = st.date_input("Effective Date (MM/DD/YYYY)", datetime.date.today(),
+                effective_date = st.date_input("Effective Date:", datetime.date.today(),
                                                label_visibility="collapsed", key="effective_date")
 
             # Calculate button in fifth column
