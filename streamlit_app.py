@@ -14,7 +14,7 @@ import streamlit.components.v1 as components
 # Set page configuration
 st.set_page_config(
     page_title="TCC Comp Data Tool",
-    page_icon="📊",
+    page_icon="👥",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
