@@ -638,7 +638,7 @@ def calculate_adjustments(df, effective_date_input, security_clearance, skills_a
         result_df["Effective Date Adjustment"] = result_df.apply(calculate_effective_date_adjustment, axis=1)
 
         # Base salary after date adjustment
-        result_df["Base After Date Adjustment"] = result_df["Min Base"] + result_df["Effective Date Adjustment"]
+        result_df["Base After Date Adjustment"] = result_df["Min"] + result_df["Effective Date Adjustment"]
 
         # Calculate other adjustments based on the date-adjusted base salary
         result_df["Security Clearance Premium (%)"] = result_df["Base After Date Adjustment"] * sec_clearance
