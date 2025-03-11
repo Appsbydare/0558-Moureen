@@ -596,14 +596,14 @@ def calculate_adjustments(df, effective_date_input, security_clearance, skills_a
     geo_diff = float(geo_differential) / 100 if geo_differential else 0
 
     # Ensure Min Base is numeric by cleaning the data first
-    if "Min Base" in result_df.columns:
-        # Clean the Min Base column (remove $ and commas) before converting to numeric
-        if result_df["Min Base"].dtype == object:  # If it's a string
-            result_df["Min Base"] = result_df["Min Base"].astype(str).str.replace('$', '').str.replace(',',
+    if "Min" in result_df.columns:
+        # Clean the Min column (remove $ and commas) before converting to numeric
+        if result_df["Min"].dtype == object:  # If it's a string
+            result_df["Min"] = result_df["Min"].astype(str).str.replace('$', '').str.replace(',',
                                                                                                        '').str.strip()
 
         # Convert to numeric
-        result_df["Min Base"] = pd.to_numeric(result_df["Min Base"], errors='coerce')
+        result_df["Min"] = pd.to_numeric(result_df["Min"], errors='coerce')
 
         # Convert Effective Date from the database to datetime for comparison
         result_df["Effective Date"] = pd.to_datetime(result_df["Effective Date"], errors='coerce')
@@ -627,10 +627,10 @@ def calculate_adjustments(df, effective_date_input, security_clearance, skills_a
 
             # Calculate the difference in days
             date_diff_days = (effective_date_as_date - db_date).days
-            date_diff_years = date_diff_days / 365.25
+            date_diff_years = date_diff_days // 365.25  # Integer division with //
 
             # Calculate adjustment amount (3% per year of base salary)
-            adjustment_amount = row["Min Base"] * (date_diff_years * 0.03)
+            adjustment_amount = row["Min"] * (date_diff_years * 0.03)
 
             return adjustment_amount
 
