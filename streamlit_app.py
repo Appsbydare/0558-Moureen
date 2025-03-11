@@ -685,7 +685,7 @@ if 'benchmark_data' not in st.session_state:
         # If data is empty, initialize with default columns
         if st.session_state.benchmark_data.empty:
             st.session_state.benchmark_data = pd.DataFrame(columns=[
-                "Job Code", "Job Title", "Job Family", "Job Description", "Job Level", "Industry", "Company Size",
+                "Job Code", "Job Title", "Company Size",
                 "Geographic Region/Location",
                 "Min Base", "10 PERC", "25 PERC", "50 PERC", "75 PERC", "Max PERC",
                 "TGT Min", "TGT 10", "TGT 25", "TGT 50", "TGT 75", "TGT Max",
@@ -789,7 +789,7 @@ def reset_job_filters():
 
 
 # Create app title
-st.markdown('<div class="main-title">Salary Survey Tool</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">TCC Comp Data Tool</div>', unsafe_allow_html=True)
 
 # Create tabs
 tab1, tab2, tab3 = st.tabs(["Benchmark Data", "Job Descriptions", "Administration"])
